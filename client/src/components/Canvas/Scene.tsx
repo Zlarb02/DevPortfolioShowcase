@@ -1,25 +1,24 @@
+
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore } from "@/lib/store";
 
-gsap.registerPlugin(ScrollTrigger);
-
-// Section-specific colors for ambient lighting
-const SECTION_COLORS = [
-  new THREE.Color(0xfff6e5), // Warm white for Home
-  new THREE.Color(0xe5f6ff), // Cool white for Services
-  new THREE.Color(0xf5e6ff), // Soft purple for Projects
-  new THREE.Color(0xe6fff5), // Mint for About
-  new THREE.Color(0xffe6e6), // Soft pink for Contact
-];
+// Hardcoded colors for each section
+const COLORS = {
+  home: new THREE.Color(0xfff6e5),      // Warm white
+  services: new THREE.Color(0xe5f6ff),   // Cool white
+  projects: new THREE.Color(0xf5e6ff),   // Soft purple
+  about: new THREE.Color(0xe6fff5),      // Mint
+  contact: new THREE.Color(0xffe6e6)     // Soft pink
+};
 
 export default function Scene() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
+  const floorMaterialRef = useRef<THREE.MeshStandardMaterial>();
   const currentSection = useStore((state) => state.currentSection);
 
   useEffect(() => {
@@ -28,7 +27,7 @@ export default function Scene() {
     // Scene setup
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0xffffff, 0.008); // Reduced fog for better depth perception
-    scene.background = SECTION_COLORS[0];
+    scene.background = COLORS.home;
     sceneRef.current = scene;
 
     // Camera setup
@@ -51,7 +50,6 @@ export default function Scene() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Lower pixel ratio
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
-    // Use the updated property name for outputEncoding
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.BasicShadowMap; // Use simpler shadow map
@@ -62,10 +60,12 @@ export default function Scene() {
     const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
     // Use simpler material to avoid exceeding texture limits
     const floorMaterial = new THREE.MeshStandardMaterial({
-      color: SECTION_COLORS[0], // Start with first section color
+      color: COLORS.home, // Start with first section color
       roughness: 0.3,
       metalness: 0.1,
     });
+    floorMaterialRef.current = floorMaterial;
+    
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.z = -400; // Center the long floor
@@ -175,37 +175,56 @@ export default function Scene() {
     };
   }, []);
 
-  // Handle section changes with smooth camera movement and enhanced color transition
+  // Handle section changes with smooth camera movement and hardcoded color transition
   useEffect(() => {
-    if (!cameraRef.current || !sceneRef.current) return;
+    if (!cameraRef.current || !sceneRef.current || !floorMaterialRef.current) return;
 
+    // Move camera based on current section
     gsap.to(cameraRef.current.position, {
       z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
       ease: "power2.inOut",
     });
 
-    // Smooth background color transition
+    // Use hardcoded colors based on section index
+    let targetColor;
+    switch (currentSection) {
+      case 0:
+        targetColor = COLORS.home;
+        break;
+      case 1:
+        targetColor = COLORS.services;
+        break;
+      case 2:
+        targetColor = COLORS.projects;
+        break;
+      case 3:
+        targetColor = COLORS.about;
+        break;
+      case 4:
+        targetColor = COLORS.contact;
+        break;
+      default:
+        targetColor = COLORS.home;
+    }
+
+    // Apply the color to the scene background
     gsap.to(sceneRef.current.background as THREE.Color, {
-      r: SECTION_COLORS[currentSection].r,
-      g: SECTION_COLORS[currentSection].g,
-      b: SECTION_COLORS[currentSection].b,
+      r: targetColor.r,
+      g: targetColor.g,
+      b: targetColor.b,
       duration: 1.5,
     });
     
-    // Update floor color to match current section
-    const floorMesh = sceneRef.current.children.find(
-      (child) => child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry
-    ) as THREE.Mesh;
+    // Also apply the color to the floor
+    gsap.to(floorMaterialRef.current.color, {
+      r: targetColor.r,
+      g: targetColor.g,
+      b: targetColor.b,
+      duration: 1.5,
+    });
     
-    if (floorMesh && floorMesh.material instanceof THREE.MeshStandardMaterial) {
-      gsap.to(floorMesh.material.color, {
-        r: SECTION_COLORS[currentSection].r,
-        g: SECTION_COLORS[currentSection].g,
-        b: SECTION_COLORS[currentSection].b,
-        duration: 1.5,
-      });
-    }
+    console.log("Updating floor color to section:", currentSection, targetColor.getHex());
   }, [currentSection]);
 
   return (
