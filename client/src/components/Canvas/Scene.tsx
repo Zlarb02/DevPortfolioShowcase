@@ -3,13 +3,13 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 
-// Hardcoded colors for each section
+// Hardcoded colors for each section with more pronounced values
 const COLORS = {
-  home: new THREE.Color(0xfff6e5), // Warm white
-  services: new THREE.Color(0xe5f6ff), // Cool white
-  projects: new THREE.Color(0xf5e6ff), // Soft purple
-  about: new THREE.Color(0xe6fff5), // Mint
-  contact: new THREE.Color(0xffe6e6), // Soft pink
+  home: new THREE.Color("#f9e8d0"), // Plus prononcé que Warm white
+  services: new THREE.Color("#d0e8f9"), // Plus prononcé que Cool white
+  projects: new THREE.Color("#e8d0f9"), // Plus prononcé que Soft purple
+  about: new THREE.Color("#d0f9e8"), // Plus prononcé que Mint
+  contact: new THREE.Color("#f9d0d0"), // Plus prononcé que Soft pink
 };
 
 export default function Scene() {
@@ -60,10 +60,11 @@ export default function Scene() {
     // Créer le matériau du sol avec une couleur plus visible
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: COLORS.home, // Start with first section color
-      roughness: 0.2,
-      metalness: 0.2,
+      roughness: 0.1,
+      metalness: 0.3,
       side: THREE.DoubleSide, // Visible des deux côtés
     });
+    console.log("Floor material color initialized to:", COLORS.home);
     floorMaterialRef.current = floorMaterial;
 
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -153,6 +154,11 @@ export default function Scene() {
         shape.rotation.y += 0.002;
         shape.rotation.z += 0.001;
       });
+      
+      // Ensure floor material is updated
+      if (floorMaterialRef.current) {
+        floorMaterialRef.current.needsUpdate = true;
+      }
 
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
@@ -233,20 +239,16 @@ export default function Scene() {
 
     // Update floor material color to match the current section
     if (floorMaterialRef.current) {
-      // Forcer une mise à jour immédiate avant l'animation
-      floorMaterialRef.current.color.set(targetColor);
+      // Directement assigner la couleur pour un effet immédiat
+      floorMaterialRef.current.color = targetColor.clone();
+      
+      // Indiquer explicitement que le matériau a besoin d'être mis à jour
       floorMaterialRef.current.needsUpdate = true;
       
-      // Puis animer pour une transition douce
-      gsap.to(floorMaterialRef.current.color, {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
-        duration: 1.5,
-        onUpdate: () => {
-          floorMaterialRef.current!.needsUpdate = true;
-        }
-      });
+      console.log("Updated floor material color to:", 
+        targetColor, 
+        "for section:", 
+        currentSection);
     }
   }, [exactScrollPosition]);
 
