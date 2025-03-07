@@ -180,65 +180,31 @@ export default function Scene() {
       scene.add(light);
     });
 
-    // Créer des groupes d'oiseaux en formation V
-    const createBirdFlocks = () => {
-      const flocks = [];
-      // Créer plusieurs formations réparties sur toutes les sections
-      // Ajouter plus d'oiseaux aux sections extrêmes
-      for (let f = 0; f < 7; f++) {
-        const flock = [];
+    // Créer des oiseaux distribués dans la scène
+    const createBirds = () => {
+      const birds = [];
+      // Créer 30 oiseaux distribués dans l'espace
+      const totalBirds = 30;
 
-        // Distribution spéciale pour avoir plus d'oiseaux dans les sections extrêmes
-        let sectionZ;
-        if (f < 2) {
-          // Premières formations dans la section welcome (plus dense)
-          sectionZ = -20 - (f * 30);
-        } else if (f > 4) {
-          // Dernières formations dans la section contact (plus dense)
-          sectionZ = -380 - ((f-5) * 30);
-        } else {
-          // Formations du milieu, réparties normalement
-          sectionZ = -100 - ((f-2) * 80);
-        }
+      for (let i = 0; i < totalBirds; i++) {
+        // Répartir les oiseaux sur différentes sections de la scène
+        const sectionZ = -20 - (Math.random() * 500); // Entre -20 et -520
 
-        // Créer un leader avec position plus visible
-        // Hauteur minimum réduite (2 au lieu de 5)
-        const leaderPos = new THREE.Vector3(
-          (Math.random() - 0.5) * 30,
-          2 + Math.random() * 18, // Hauteur entre 2 et 20 au lieu de 5 et 20
+        // Position aléatoire mais visible
+        const position = new THREE.Vector3(
+          (Math.random() - 0.5) * 40,  // Largeur: entre -20 et 20
+          5 + Math.random() * 15,     // Hauteur: entre 5 et 20
           sectionZ
         );
-        const leader = new Bird(scene, leaderPos);
 
-        // Activer les ombres pour les oiseaux
-        leader.mesh.castShadow = true;
-
-        flock.push(leader);
-
-        // Créer les suiveurs en formation V plus resserrée et cohérente
-        const flockSize = 4 + Math.floor(Math.random() * 3); // Réduire légèrement la taille du groupe
-        for (let i = 0; i < flockSize; i++) {
-          const side = i % 2 === 0 ? 1 : -1;
-          const row = Math.floor(i / 2) + 1;
-
-          // Formation avec plus de variations de hauteur
-          const followerPos = new THREE.Vector3(
-            leaderPos.x + side * row * 1.2,
-            leaderPos.y - row * 0.4 + (Math.random() - 0.5) * 2, // Plus de variation verticale
-            leaderPos.z - row * 1.5
-          );
-
-          const bird = new Bird(scene, followerPos, leader);
-          bird.mesh.castShadow = true;
-          flock.push(bird);
-        }
-
-        flocks.push(flock);
+        const bird = new Bird(scene, position);
+        bird.mesh.castShadow = true;
+        birds.push(bird);
       }
-      return flocks;
+      return birds;
     };
 
-    const birdFlocks = createBirdFlocks();
+    const birds = createBirds();
 
     // Function to add 3D text
     const add3DText = async (text: string, x: number, y: number, z: number) => {
@@ -256,7 +222,7 @@ export default function Scene() {
             }
           );
         });
-        
+
         const geometry = new TextGeometry(text, {
           font: font,
           size: 1,
@@ -302,15 +268,12 @@ export default function Scene() {
       });
 
       // Animer les oiseaux
-      birdFlocks.forEach(flock => {
-        flock.forEach(bird => bird.update());
-      });
+      birds.forEach(bird => bird.update());
 
       // Debug - afficher nombre d'oiseaux (première exécution seulement)
       if (!window.birdsLogged) {
-        const totalBirds = birdFlocks.reduce((sum, flock) => sum + flock.length, 0);
-        console.log(`Nombre total d'oiseaux créés: ${totalBirds}`);
-        console.log(`Position du premier oiseau: `, birdFlocks[0][0].position);
+        console.log(`Nombre total d'oiseaux créés: ${birds.length}`);
+        console.log(`Position du premier oiseau: `, birds[0].position);
         window.birdsLogged = true;
       }
 
@@ -337,12 +300,10 @@ export default function Scene() {
       window.removeEventListener("resize", handleResize);
 
       // Nettoyer les oiseaux
-      birdFlocks.forEach(flock => {
-        flock.forEach(bird => {
-          scene.remove(bird.mesh);
-          bird.mesh.geometry.dispose();
-          (bird.mesh.material as THREE.Material).dispose();
-        });
+      birds.forEach(bird => {
+        scene.remove(bird.mesh);
+        bird.mesh.geometry.dispose();
+        (bird.mesh.material as THREE.Material).dispose();
       });
 
       renderer.dispose();
