@@ -62,7 +62,7 @@ export default function Scene() {
     const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
     // Use simpler material to avoid exceeding texture limits
     const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+      color: SECTION_COLORS[0], // Start with first section color
       roughness: 0.3,
       metalness: 0.1,
     });
@@ -192,6 +192,20 @@ export default function Scene() {
       b: SECTION_COLORS[currentSection].b,
       duration: 1.5,
     });
+    
+    // Update floor color to match current section
+    const floorMesh = sceneRef.current.children.find(
+      (child) => child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry
+    ) as THREE.Mesh;
+    
+    if (floorMesh && floorMesh.material instanceof THREE.MeshStandardMaterial) {
+      gsap.to(floorMesh.material.color, {
+        r: SECTION_COLORS[currentSection].r,
+        g: SECTION_COLORS[currentSection].g,
+        b: SECTION_COLORS[currentSection].b,
+        duration: 1.5,
+      });
+    }
   }, [currentSection]);
 
   return (
