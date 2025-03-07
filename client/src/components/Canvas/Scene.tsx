@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 
@@ -12,16 +13,47 @@ class Bird {
   offset: THREE.Vector3;
   
   constructor(scene: THREE.Scene, position: THREE.Vector3, leader: Bird | null = null) {
-    // Créer une forme plus visible pour représenter l'oiseau
-    const geometry = new THREE.ConeGeometry(0.8, 2, 3);
-    geometry.rotateX(Math.PI / 2);
-    const material = new THREE.MeshBasicMaterial({ 
-      color: 0x000000, // Noir pour contraster avec le ciel
-      transparent: false,
-      opacity: 1
+    // Créer une forme d'oiseau plus élaborée avec des ailes
+    const bodyGeometry = new THREE.ConeGeometry(0.5, 1.5, 5);
+    bodyGeometry.rotateX(Math.PI / 2);
+    
+    // Ailes
+    const wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
+    wingGeometry.translate(0, 0.2, 0);
+    
+    // Tête
+    const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+    headGeometry.translate(0, 0, 0.9);
+    
+    // Fusionner les géométries
+    const geometry = new THREE.BufferGeometry();
+    
+    // Combiner les géométries
+    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries([
+      bodyGeometry,
+      wingGeometry,
+      headGeometry
+    ]);
+    
+    // Choisir une couleur aléatoire parmi une palette d'oiseaux
+    const birdColors = [
+      0x333333, // noir
+      0x555555, // gris foncé
+      0x777777, // gris
+      0x4A2C2A, // brun foncé
+      0x6A4C4A, // brun
+    ];
+    
+    const color = birdColors[Math.floor(Math.random() * birdColors.length)];
+    
+    const material = new THREE.MeshStandardMaterial({ 
+      color: color,
+      roughness: 0.8,
+      metalness: 0.1,
+      flatShading: true
     });
     
-    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh = new THREE.Mesh(mergedGeometry, material);
     this.mesh.position.copy(position);
     this.position = position;
     
@@ -139,6 +171,14 @@ class Bird {
       
       // Interpoler doucement vers la rotation cible (effet de lissage)
       this.mesh.quaternion.slerp(targetRotation, 0.1);
+      
+      // Animation des ailes (balancement) en fonction de la vitesse
+      // Utiliser une fonction sinus pour créer un effet de battement
+      const wingFlapSpeed = Math.min(5, this.velocity.length() * 30);
+      const wingRotation = Math.sin(Date.now() * 0.01 * wingFlapSpeed) * 0.2;
+      
+      // Appliquer la rotation aux ailes en utilisant la matrice de rotation
+      this.mesh.rotateX(wingRotation);
     }
   }
 }
@@ -326,6 +366,10 @@ export default function Scene() {
           -20 - (f * 80) // Répartir les formations dans les différentes sections
         );
         const leader = new Bird(scene, leaderPos);
+        
+        // Activer les ombres pour les oiseaux
+        leader.mesh.castShadow = true;
+        
         flock.push(leader);
         
         // Créer les suiveurs en formation V plus resserrée et cohérente
@@ -342,6 +386,7 @@ export default function Scene() {
           );
           
           const bird = new Bird(scene, followerPos, leader);
+          bird.mesh.castShadow = true;
           flock.push(bird);
         }
         
