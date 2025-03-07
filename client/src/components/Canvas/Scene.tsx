@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 
@@ -29,7 +29,7 @@ class Bird {
     const geometry = new THREE.BufferGeometry();
     
     // Combiner les géométries
-    const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries([
+    const mergedGeometry = mergeBufferGeometries([
       bodyGeometry,
       wingGeometry,
       headGeometry
