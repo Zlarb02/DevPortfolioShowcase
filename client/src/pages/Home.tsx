@@ -38,21 +38,9 @@ export default function Home() {
       const boundedSection = Math.max(0, Math.min(numSections - 1, newSection));
       const exactPosition = newSection + (invertedPosition % sectionHeight) / sectionHeight;
       setCurrentSection(boundedSection, exactPosition, isScrollingDown);
-
-      // Calculate exact position between sections (0 to 4 with decimals)
-      const sectionHeight = window.innerHeight;
-      const exactPosition = window.scrollY / sectionHeight;
       
-      // Calculate current section (integer)
-      const currentSection = Math.floor(exactPosition);
-      
-      // Détecter la direction du défilement (vers le haut ou vers le bas)
-      const isScrollingDown = window.scrollY > prevScrollY;
-      setPrevScrollY(window.scrollY);
-      
-      // Update both exact position and section in store
-      // Ajouter la direction du défilement comme paramètre supplémentaire
-      setCurrentSection(currentSection, exactPosition, isScrollingDown);
+      // Nous avons déjà calculé toutes ces valeurs ci-dessus avec la logique inversée,
+      // donc nous n'avons pas besoin de ce code en double
     };
 
     window.addEventListener('scroll', handleScroll);
