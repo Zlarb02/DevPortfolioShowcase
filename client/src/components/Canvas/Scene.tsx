@@ -175,17 +175,31 @@ export default function Scene() {
     };
   }, []);
 
-  // Handle section changes with smooth camera movement and hardcoded color transition
+  // Get the exact scroll position for smoother camera movement
+  const exactScrollPosition = useStore((state) => state.exactScrollPosition);
+
+  // Handle camera movement based on exact scroll position
   useEffect(() => {
     if (!cameraRef.current || !sceneRef.current || !floorMaterialRef.current) return;
 
-    // Move camera based on current section
+    // Calculate the target camera position based on exact scroll position
+    const targetZ = 10 - exactScrollPosition * 100;
+
+    // Calculate the threshold values for accelerating camera movement
+    const currentSectionThreshold = Math.floor(exactScrollPosition);
+    const nextSectionThreshold = currentSectionThreshold + 0.8;
+    const acceleration = exactScrollPosition > nextSectionThreshold ? 2.5 : 1;
+    
+    // Move camera with variable speed based on threshold
     gsap.to(cameraRef.current.position, {
-      z: 10 - currentSection * 100, // Move forward while keeping initial height
-      duration: 1.5,
-      ease: "power2.inOut",
+      z: targetZ,
+      duration: acceleration === 1 ? 0.8 : 0.5, // Faster when accelerating
+      ease: acceleration === 1 ? "power1.out" : "power2.inOut",
     });
 
+    // Determine which section we're in (same as before)
+    const currentSection = Math.floor(exactScrollPosition);
+    
     // Use hardcoded colors based on section index
     let targetColor;
     switch (currentSection) {
@@ -208,7 +222,7 @@ export default function Scene() {
         targetColor = COLORS.home;
     }
 
-    // Apply the color to the scene background
+    // Apply the color to the scene background with longer duration for smoother transitions
     gsap.to(sceneRef.current.background as THREE.Color, {
       r: targetColor.r,
       g: targetColor.g,
@@ -223,9 +237,7 @@ export default function Scene() {
       b: targetColor.b,
       duration: 1.5,
     });
-    
-    console.log("Updating floor color to section:", currentSection, targetColor.getHex());
-  }, [currentSection]);
+  }, [exactScrollPosition]);
 
   return (
     <div

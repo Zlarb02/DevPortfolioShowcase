@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 
-interface StoreState {
+type State = {
   currentSection: number;
-  setCurrentSection: (section: number) => void;
-}
+  exactScrollPosition: number;
+  setCurrentSection: (section: number, exactPosition?: number) => void;
+};
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<State>((set) => ({
   currentSection: 0,
-  setCurrentSection: (section) => set({ currentSection: section }),
+  exactScrollPosition: 0,
+  setCurrentSection: (section, exactPosition = section) => 
+    set({ 
+      currentSection: section,
+      exactScrollPosition: exactPosition
+    }),
 }));

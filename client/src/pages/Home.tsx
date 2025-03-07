@@ -21,10 +21,15 @@ export default function Home() {
       const progress = (window.scrollY / scrollHeight) + 0.02;
       setScrollProgress(Math.min(progress, 1));
 
-      // Update current section based on scroll position
+      // Calculate exact position between sections (0 to 4 with decimals)
       const sectionHeight = window.innerHeight;
-      const currentSection = Math.floor(window.scrollY / sectionHeight);
-      setCurrentSection(currentSection);
+      const exactPosition = window.scrollY / sectionHeight;
+      
+      // Calculate current section (integer)
+      const currentSection = Math.floor(exactPosition);
+      
+      // Update both exact position and section in store
+      setCurrentSection(currentSection, exactPosition);
     };
 
     window.addEventListener('scroll', handleScroll);
