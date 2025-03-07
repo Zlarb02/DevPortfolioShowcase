@@ -140,8 +140,9 @@ function SceneContent() {
     if (!floorRef.current) return;
 
     // Change background color based on section
-    gsap.to(document.documentElement.style, {
-      "--background": SECTION_COLORS[currentSection].getStyle(),
+    const color = SECTION_COLORS[currentSection].getStyle();
+    gsap.to("html", {
+      backgroundColor: color,
       duration: 1.5,
     });
 

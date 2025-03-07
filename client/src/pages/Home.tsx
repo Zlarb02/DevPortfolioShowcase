@@ -17,16 +17,24 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight <= 0) return; // Prevent division by zero
+      
       // Add small offset to always show some progress
       const progress = (window.scrollY / scrollHeight) + 0.02;
       setScrollProgress(Math.min(progress, 1));
 
       // Update current section based on scroll position
       const sectionHeight = window.innerHeight;
-      const currentSection = Math.floor(window.scrollY / sectionHeight);
+      const currentSection = Math.min(
+        Math.floor(window.scrollY / sectionHeight),
+        4 // Limit to max section index
+      );
       setCurrentSection(currentSection);
     };
 
+    // Initial call to set current section on load
+    handleScroll();
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
