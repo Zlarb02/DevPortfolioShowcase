@@ -12,13 +12,13 @@ class Bird {
   offset: THREE.Vector3;
   
   constructor(scene: THREE.Scene, position: THREE.Vector3, leader: Bird | null = null) {
-    // Créer une forme simple pour représenter l'oiseau
-    const geometry = new THREE.ConeGeometry(0.2, 0.8, 3);
+    // Créer une forme plus visible pour représenter l'oiseau
+    const geometry = new THREE.ConeGeometry(0.8, 2, 3);
     geometry.rotateX(Math.PI / 2);
     const material = new THREE.MeshBasicMaterial({ 
-      color: 0xFFFFFF,
-      transparent: true,
-      opacity: 0.7
+      color: 0x000000, // Noir pour contraster avec le ciel
+      transparent: false,
+      opacity: 1
     });
     
     this.mesh = new THREE.Mesh(geometry, material);
@@ -46,26 +46,35 @@ class Bird {
       // Suivre le leader avec un léger décalage
       const targetPosition = new THREE.Vector3().copy(this.leader.position).add(this.offset);
       const direction = new THREE.Vector3().subVectors(targetPosition, this.position);
-      direction.normalize().multiplyScalar(0.05);
+      direction.normalize().multiplyScalar(0.15); // Plus rapide
       
       // Mélanger la direction cible avec un peu de mouvement aléatoire
       this.velocity.add(direction);
-      this.velocity.multiplyScalar(0.95); // Amortissement
+      this.velocity.multiplyScalar(0.9); // Moins d'amortissement
     } else {
-      // Comportement de leader - vol plus libre
-      if (Math.random() < 0.05) {
+      // Comportement de leader - vol plus libre et visible
+      if (Math.random() < 0.1) { // Plus de chance de changer de direction
         this.velocity.add(new THREE.Vector3(
-          (Math.random() - 0.5) * 0.02,
-          (Math.random() - 0.5) * 0.01,
-          (Math.random() - 0.5) * 0.02
+          (Math.random() - 0.5) * 0.1, // Mouvements plus importants
+          (Math.random() - 0.5) * 0.05,
+          (Math.random() - 0.5) * 0.1
         ));
       }
       
-      // Rester dans les limites de la scène
-      const bounds = 30;
-      if (Math.abs(this.position.x) > bounds) this.velocity.x *= -0.5;
-      if (Math.abs(this.position.y) > bounds/2) this.velocity.y *= -0.5;
-      if (Math.abs(this.position.z) > bounds) this.velocity.z *= -0.5;
+      // Déplacement par défaut pour le leader (toujours avancer un peu)
+      this.velocity.z -= 0.01; // Avancer à travers les sections
+      
+      // Rester dans les limites de la scène avec plus d'espace
+      const boundsX = 50;
+      const boundsY = 30;
+      const boundsZ = 500; // Zone beaucoup plus large en Z
+      if (Math.abs(this.position.x) > boundsX) this.velocity.x *= -0.8;
+      if (Math.abs(this.position.y) > boundsY) this.velocity.y *= -0.8;
+      
+      // Si trop loin, revenir en arrière
+      if (this.position.z < -boundsZ) {
+        this.position.z = -10; // Retour au début
+      }
     }
     
     // Appliquer la vélocité
@@ -253,14 +262,14 @@ export default function Scene() {
     const createBirdFlocks = () => {
       const flocks = [];
       // Créer plusieurs formations
-      for (let f = 0; f < 3; f++) {
+      for (let f = 0; f < 5; f++) { // Plus de formations
         const flock = [];
         
-        // Créer un leader
+        // Créer un leader avec position plus visible
         const leaderPos = new THREE.Vector3(
-          (Math.random() - 0.5) * 20,
-          10 + Math.random() * 10,
-          -30 - Math.random() * 20
+          (Math.random() - 0.5) * 30,
+          5 + Math.random() * 15,
+          -20 - (f * 80) // Répartir les formations dans les différentes sections
         );
         const leader = new Bird(scene, leaderPos);
         flock.push(leader);
@@ -299,6 +308,14 @@ export default function Scene() {
       birdFlocks.forEach(flock => {
         flock.forEach(bird => bird.update());
       });
+      
+      // Debug - afficher nombre d'oiseaux (première exécution seulement)
+      if (!window.birdsLogged) {
+        const totalBirds = birdFlocks.reduce((sum, flock) => sum + flock.length, 0);
+        console.log(`Nombre total d'oiseaux créés: ${totalBirds}`);
+        console.log(`Position du premier oiseau: `, birdFlocks[0][0].position);
+        window.birdsLogged = true;
+      }
       
       // Ensure floor material is updated
       if (floorMaterialRef.current) {
