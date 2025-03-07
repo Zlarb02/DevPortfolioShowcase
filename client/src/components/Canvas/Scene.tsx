@@ -1,4 +1,3 @@
-
 import * as THREE from "three";
 import { useEffect, useRef, useState } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
@@ -27,7 +26,7 @@ function SceneContent() {
   useEffect(() => {
     if (!sceneRef.current) {
       sceneRef.current = scene;
-      
+
       // Create light setup
       const lights = new Lights(scene);
       lights.setup();
@@ -41,7 +40,7 @@ function SceneContent() {
         roughness: 0.3,
         metalness: 0.1,
       });
-      
+
       const floor = new THREE.Mesh(floorGeometry, floorMaterial);
       floor.rotation.x = -Math.PI / 2;
       floor.position.z = -400; // Center the long floor
@@ -72,7 +71,7 @@ function SceneContent() {
       });
       const servicesTorus = new THREE.Mesh(
         servicesGeometry,
-        servicesTorusMaterial
+        servicesTorusMaterial,
       );
       servicesTorus.position.set(0, 3, -100);
       servicesTorus.castShadow = true;
@@ -82,7 +81,11 @@ function SceneContent() {
       const projectsCubesGroup = new THREE.Group();
       for (let i = 0; i < 5; i++) {
         const cubeSize = 2 + Math.random() * 2;
-        const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+        const cubeGeometry = new THREE.BoxGeometry(
+          cubeSize,
+          cubeSize,
+          cubeSize,
+        );
         const cubeMaterial = new THREE.MeshStandardMaterial({
           color: SECTION_COLORS[2],
           metalness: 0.8,
@@ -94,12 +97,12 @@ function SceneContent() {
         cube.position.set(
           Math.cos(angle) * radius,
           3 + Math.sin(i * 0.5) * 2,
-          -200 + Math.sin(angle) * radius
+          -200 + Math.sin(angle) * radius,
         );
         cube.rotation.set(
           Math.random() * Math.PI,
           Math.random() * Math.PI,
-          Math.random() * Math.PI
+          Math.random() * Math.PI,
         );
         cube.castShadow = true;
         projectsCubesGroup.add(cube);
@@ -143,8 +146,15 @@ function SceneContent() {
     });
 
     // Update floor color
-    if (floorRef.current && floorRef.current.material instanceof THREE.MeshStandardMaterial) {
-      console.log("Updating floor color to section:", currentSection, SECTION_COLORS[currentSection]);
+    if (
+      floorRef.current &&
+      floorRef.current.material instanceof THREE.MeshStandardMaterial
+    ) {
+      console.log(
+        "Updating floor color to section:",
+        currentSection,
+        SECTION_COLORS[currentSection],
+      );
       gsap.to(floorRef.current.material.color, {
         r: SECTION_COLORS[currentSection].r,
         g: SECTION_COLORS[currentSection].g,
@@ -152,25 +162,27 @@ function SceneContent() {
         duration: 1.5,
       });
     } else {
-      console.warn("Floor mesh not found or material is not MeshStandardMaterial");
+      console.warn(
+        "Floor mesh not found or material is not MeshStandardMaterial",
+      );
     }
   }, [currentSection]);
 
   // Animation for shapes
   useFrame(({ clock }) => {
     const elapsedTime = clock.getElapsedTime();
-    
+
     // Animate shapes based on which section is active
     const shapes = sceneRef.current.children.filter(
-      (child) => child instanceof THREE.Mesh && child.name !== "floor"
+      (child) => child instanceof THREE.Mesh && child.name !== "floor",
     );
-    
+
     shapes.forEach((shape, index) => {
       if (shape instanceof THREE.Mesh) {
         // Give each shape a slightly different animation
         shape.rotation.x = Math.sin(elapsedTime * 0.3 + index) * 0.2;
         shape.rotation.y = Math.sin(elapsedTime * 0.2 + index) * 0.3;
-        
+
         // Make the current section's shape more animated
         const sectionIndex = Math.floor(index / 2);
         if (sectionIndex === currentSection) {
@@ -190,7 +202,14 @@ export default function Scene() {
     <Canvas
       shadows
       camera={{ position: [0, 5, 10], fov: 75 }}
-      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: -1,
+      }}
     >
       <SceneContent />
     </Canvas>
