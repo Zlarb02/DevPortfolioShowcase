@@ -364,15 +364,30 @@ export default function Scene() {
     // Créer des groupes d'oiseaux en formation V
     const createBirdFlocks = () => {
       const flocks = [];
-      // Créer plusieurs formations
-      for (let f = 0; f < 5; f++) { // Plus de formations
+      // Créer plusieurs formations réparties sur toutes les sections
+      // Ajouter plus d'oiseaux aux sections extrêmes
+      for (let f = 0; f < 7; f++) {
         const flock = [];
+        
+        // Distribution spéciale pour avoir plus d'oiseaux dans les sections extrêmes
+        let sectionZ;
+        if (f < 2) {
+          // Premières formations dans la section welcome (plus dense)
+          sectionZ = -20 - (f * 30);
+        } else if (f > 4) {
+          // Dernières formations dans la section contact (plus dense)
+          sectionZ = -380 - ((f-5) * 30);
+        } else {
+          // Formations du milieu, réparties normalement
+          sectionZ = -100 - ((f-2) * 80);
+        }
 
         // Créer un leader avec position plus visible
+        // Hauteur minimum réduite (2 au lieu de 5)
         const leaderPos = new THREE.Vector3(
           (Math.random() - 0.5) * 30,
-          5 + Math.random() * 15,
-          -20 - (f * 80) // Répartir les formations dans les différentes sections
+          2 + Math.random() * 18, // Hauteur entre 2 et 20 au lieu de 5 et 20
+          sectionZ
         );
         const leader = new Bird(scene, leaderPos);
 
