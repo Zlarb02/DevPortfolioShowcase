@@ -53,22 +53,22 @@ section.active {
 
 section.leaving-up {
   opacity: 0;
-  transform: translateY(-50px);
+  transform: translateY(50px);
   transition: opacity 0.4s ease-in, transform 0.4s ease-in;
 }
 
 section.entering-down {
-  transform: translateY(50px);
+  transform: translateY(-50px);
 }
 
 section.leaving-down {
   opacity: 0;
-  transform: translateY(50px);
+  transform: translateY(-50px);
   transition: opacity 0.4s ease-in, transform 0.4s ease-in;
 }
 
 section.entering-up {
-  transform: translateY(-50px);
+  transform: translateY(50px);
 }
 
 /* Make sure content is scrollable but without scrollbars */

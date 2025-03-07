@@ -82,3 +82,42 @@ export default function Section({ id, children }: SectionProps) {
     </section>
   );
 }
+import { useEffect, useRef } from 'react';
+import { useStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
+
+interface SectionProps {
+  id: number;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export default function Section({ id, children, className }: SectionProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { currentSection, exactScrollPosition, isScrollingDown } = useStore();
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    
+    const section = sectionRef.current;
+    
+    // Clear previous classes
+    section.classList.remove('active', 'leaving-up', 'leaving-down', 'entering-up', 'entering-down');
+    
+    if (id === currentSection) {
+      section.classList.add('active');
+    } else if (id < currentSection) {
+      // Inverser la logique pour l'animation
+      section.classList.add(isScrollingDown ? 'leaving-down' : 'entering-down');
+    } else if (id > currentSection) {
+      // Inverser la logique pour l'animation
+      section.classList.add(isScrollingDown ? 'entering-up' : 'leaving-up');
+    }
+  }, [id, currentSection, exactScrollPosition, isScrollingDown]);
+
+  return (
+    <section ref={sectionRef} className={cn('section', className)}>
+      {children}
+    </section>
+  );
+}

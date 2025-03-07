@@ -21,8 +21,23 @@ export default function Home() {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       // Add small offset to always show some progress
-      const progress = (window.scrollY / scrollHeight) + 0.02;
+      const progress = (1 - (window.scrollY / scrollHeight)) + 0.02;
       setScrollProgress(Math.min(progress, 1));
+      
+      // Detect scroll direction (inverted from normal)
+      const isScrollingDown = window.scrollY < prevScrollY;
+      setPrevScrollY(window.scrollY);
+      
+      // Calculate which section we're in (inverted)
+      const numSections = 5; // Total number of sections
+      const sectionHeight = scrollHeight / numSections;
+      const invertedPosition = scrollHeight - window.scrollY;
+      const newSection = Math.floor(invertedPosition / sectionHeight);
+      
+      // Update the store with the current section (bounded to valid sections)
+      const boundedSection = Math.max(0, Math.min(numSections - 1, newSection));
+      const exactPosition = newSection + (invertedPosition % sectionHeight) / sectionHeight;
+      setCurrentSection(boundedSection, exactPosition, isScrollingDown);s, 1));
 
       // Calculate exact position between sections (0 to 4 with decimals)
       const sectionHeight = window.innerHeight;
