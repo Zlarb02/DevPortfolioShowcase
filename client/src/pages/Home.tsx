@@ -14,9 +14,6 @@ export default function Home() {
   const setCurrentSection = useStore(state => state.setCurrentSection);
 
   useEffect(() => {
-    const sections = document.querySelectorAll('.section-container');
-    const totalSections = sections.length;
-
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       const progress = window.scrollY / scrollHeight;
@@ -46,37 +43,41 @@ export default function Home() {
   return (
     <div className="relative">
       <Scene />
-      <div className="relative">
-        <Section id="home" className="section-container">
-          <SectionContent 
-            title="Welcome"
-            content="Interactive developer specializing in immersive web experiences"
-          />
-        </Section>
-        <Section id="services" className="section-container">
-          <SectionContent 
-            title="Services"
-            content="Web Development • 3D Visualization • Interactive Design"
-          />
-        </Section>
-        <Section id="projects" className="section-container">
-          <SectionContent 
-            title="Projects"
-            content="Explore my latest work and creative experiments"
-          />
-        </Section>
-        <Section id="about" className="section-container">
-          <SectionContent 
-            title="About"
-            content="Crafting digital experiences that push the boundaries of web technology"
-          />
-        </Section>
-        <Section id="contact" className="section-container">
-          <SectionContent 
-            title="Contact"
-            content="hello@pogodev.com"
-          />
-        </Section>
+      {/* Scrollable container that sets the total height */}
+      <div className="sections-container">
+        {/* Fixed sections container */}
+        <div className="fixed-sections">
+          <Section id="home">
+            <SectionContent 
+              title="Welcome"
+              content="Interactive developer specializing in immersive web experiences"
+            />
+          </Section>
+          <Section id="services">
+            <SectionContent 
+              title="Services"
+              content="Web Development • 3D Visualization • Interactive Design"
+            />
+          </Section>
+          <Section id="projects">
+            <SectionContent 
+              title="Projects"
+              content="Explore my latest work and creative experiments"
+            />
+          </Section>
+          <Section id="about">
+            <SectionContent 
+              title="About"
+              content="Crafting digital experiences that push the boundaries of web technology"
+            />
+          </Section>
+          <Section id="contact">
+            <SectionContent 
+              title="Contact"
+              content="hello@pogodev.com"
+            />
+          </Section>
+        </div>
       </div>
       <ProgressBar 
         progress={scrollProgress} 

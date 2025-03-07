@@ -18,7 +18,7 @@ export default function Section({ id, children }: SectionProps) {
   return (
     <section 
       id={id}
-      className={`section-container p-8 ${isActive ? 'active' : ''}`}
+      className={`p-8 ${isActive ? 'active' : ''}`}
     >
       {children}
     </section>

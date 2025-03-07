@@ -21,23 +21,26 @@
   }
 }
 
-/* Ensure sections stay centered and fixed during scroll */
-.section-container {
-  @apply min-h-screen flex items-center justify-center fixed top-0 left-0 w-full;
-  height: 100vh;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-}
-
-.section-container.active {
-  opacity: 1;
-}
-
-/* Container for all sections */
+/* Container for all sections - this is what scrolls */
 .sections-container {
   @apply relative;
   height: 500vh; /* 5 sections * 100vh */
-  scroll-snap-type: y mandatory;
+}
+
+/* Container for fixed sections */
+.fixed-sections {
+  @apply fixed top-0 left-0 w-full h-screen;
+}
+
+/* Individual section styling */
+section {
+  @apply absolute top-0 left-0 w-full h-full flex items-center justify-center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
+}
+
+section.active {
+  opacity: 1;
+  pointer-events: auto;
 }
