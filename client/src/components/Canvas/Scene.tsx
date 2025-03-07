@@ -1,17 +1,26 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useStore } from '@/lib/store';
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useStore } from "@/lib/store";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Section-specific colors for ambient lighting
+const SECTION_COLORS = [
+  new THREE.Color(0xfff6e5), // Warm white for Home
+  new THREE.Color(0xe5f6ff), // Cool white for Services
+  new THREE.Color(0xf5e6ff), // Soft purple for Projects
+  new THREE.Color(0xe6fff5), // Mint for About
+  new THREE.Color(0xffe6e6), // Soft pink for Contact
+];
 
 export default function Scene() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
-  const currentSection = useStore(state => state.currentSection);
+  const currentSection = useStore((state) => state.currentSection);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -19,7 +28,7 @@ export default function Scene() {
     // Scene setup
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0xffffff, 0.015); // Subtle fog for depth
-    scene.background = new THREE.Color(0xf0f0f0); // Slightly darker background
+    scene.background = SECTION_COLORS[0];
     sceneRef.current = scene;
 
     // Camera setup
@@ -33,12 +42,14 @@ export default function Scene() {
     cameraRef.current = camera;
 
     // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ 
+    const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true 
+      alpha: true,
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -46,19 +57,19 @@ export default function Scene() {
     const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      roughness: 0.8,
+      roughness: 0.3,
       metalness: 0.2,
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.z = -500; // Center the long floor
+    floor.position.z = -400; // Center the long floor
     scene.add(floor);
 
     // Add geometric shapes for each section
     const shapes = [];
     for (let i = 0; i < 5; i++) {
       let geometry;
-      switch(i) {
+      switch (i) {
         case 0: // Home
           geometry = new THREE.TorusGeometry(3, 0.5, 16, 50);
           break;
@@ -76,10 +87,12 @@ export default function Scene() {
           break;
       }
 
-      const material = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshPhysicalMaterial({
         color: 0x6366f1,
-        roughness: 0.3,
-        metalness: 0.7,
+        roughness: 0.2,
+        metalness: 0.8,
+        clearcoat: 0.5,
+        clearcoatRoughness: 0.1,
       });
 
       const shape = new THREE.Mesh(geometry, material);
@@ -90,13 +103,13 @@ export default function Scene() {
     }
 
     // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
     // Add fixed lights along the path
     for (let i = 0; i < 10; i++) {
-      const leftLight = new THREE.PointLight(0xffffff, 1, 50);
-      const rightLight = new THREE.PointLight(0xffffff, 1, 50);
+      const leftLight = new THREE.PointLight(0xffffff, 0.8, 50);
+      const rightLight = new THREE.PointLight(0xffffff, 0.8, 50);
 
       leftLight.position.set(-5, 3, -i * 50);
       rightLight.position.set(5, 3, -i * 50);
@@ -107,7 +120,7 @@ export default function Scene() {
     // Animation loop
     const animate = () => {
       // Animate shapes
-      shapes.forEach((shape, i) => {
+      shapes.forEach((shape) => {
         shape.rotation.y += 0.002;
       });
 
@@ -122,30 +135,38 @@ export default function Scene() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       renderer.dispose();
       containerRef.current?.removeChild(renderer.domElement);
     };
   }, []);
 
-  // Handle section changes with smooth camera movement
+  // Handle section changes with smooth camera movement and background color transition
   useEffect(() => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || !sceneRef.current) return;
 
     gsap.to(cameraRef.current.position, {
       z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
-      ease: "power2.inOut"
+      ease: "power2.inOut",
+    });
+
+    // Transition background color
+    gsap.to(sceneRef.current.background as THREE.Color, {
+      r: SECTION_COLORS[currentSection].r,
+      g: SECTION_COLORS[currentSection].g,
+      b: SECTION_COLORS[currentSection].b,
+      duration: 1.5,
     });
   }, [currentSection]);
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="fixed top-0 left-0 w-full h-full z-[-1]"
     />
   );

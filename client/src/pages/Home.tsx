@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Scene from '@/components/Canvas/Scene';
-import ProgressBar from '@/components/Layout/ProgressBar';
+import NavBar from '@/components/Layout/NavBar';
 import Section from '@/components/Layout/Section';
 import SectionContent from '@/components/Content/SectionContent';
 import { useStore } from '@/lib/store';
@@ -46,7 +46,7 @@ export default function Home() {
       {/* Scrollable container that sets the total height */}
       <div className="sections-container">
         {/* Fixed sections container */}
-        <div className="fixed-sections">
+        <div className="fixed-sections pt-32"> {/* Added top padding for navbar */}
           <Section id="home">
             <SectionContent 
               title="Welcome"
@@ -79,7 +79,7 @@ export default function Home() {
           </Section>
         </div>
       </div>
-      <ProgressBar 
+      <NavBar 
         progress={scrollProgress} 
         onNavigate={handleProgressBarClick}
       />
