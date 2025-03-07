@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Scene from '@/components/Canvas/Scene';
 import ProgressBar from '@/components/Layout/ProgressBar';
 import Section from '@/components/Layout/Section';
 import SectionContent from '@/components/Content/SectionContent';
 import { useStore } from '@/lib/store';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -14,21 +18,31 @@ export default function Home() {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       const progress = window.scrollY / scrollHeight;
       setScrollProgress(progress);
-      
+
       // Update current section based on scroll position
       const sectionHeight = window.innerHeight;
       const currentSection = Math.floor(window.scrollY / sectionHeight);
       setCurrentSection(currentSection);
     };
 
+    // Set up smooth scrolling
+    gsap.to("html, body", {
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1,
+      }
+    });
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
 
   return (
-    <div className="min-h-[500vh] relative">
+    <div className="relative">
       <Scene />
-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
+      <div className="relative">
         <Section id="home">
           <SectionContent 
             title="Welcome"
