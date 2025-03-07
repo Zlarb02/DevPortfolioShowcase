@@ -29,7 +29,7 @@ export default function Scene() {
       0.1,
       1000
     );
-    camera.position.set(0, 2, 10); // Slightly elevated camera position
+    camera.position.set(0, 2, 10); // Fixed height above ground
     cameraRef.current = camera;
 
     // Renderer setup
@@ -51,36 +51,66 @@ export default function Scene() {
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -2;
+    floor.position.z = -500; // Center the long floor
     scene.add(floor);
+
+    // Add geometric shapes for each section
+    const shapes = [];
+    for (let i = 0; i < 5; i++) {
+      let geometry;
+      switch(i) {
+        case 0: // Home
+          geometry = new THREE.TorusGeometry(3, 0.5, 16, 50);
+          break;
+        case 1: // Services
+          geometry = new THREE.OctahedronGeometry(3);
+          break;
+        case 2: // Projects
+          geometry = new THREE.IcosahedronGeometry(3);
+          break;
+        case 3: // About
+          geometry = new THREE.DodecahedronGeometry(3);
+          break;
+        case 4: // Contact
+          geometry = new THREE.TorusKnotGeometry(2, 0.5);
+          break;
+      }
+
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x6366f1,
+        roughness: 0.3,
+        metalness: 0.7,
+      });
+
+      const shape = new THREE.Mesh(geometry, material);
+      shape.position.set(0, 0, -i * 100 - 50); // Space shapes along the path
+      shape.rotation.x = -Math.PI / 6; // Tilt slightly for better visibility
+      shapes.push(shape);
+      scene.add(shape);
+    }
 
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    // Add fixed lights for corridor effect
-    const createSectionLights = (yPos: number) => {
-      const leftLight = new THREE.PointLight(0xffffff, 1, 20);
-      const rightLight = new THREE.PointLight(0xffffff, 1, 20);
-      leftLight.position.set(-5, 3, 0);
-      rightLight.position.set(5, 3, 0);
+    // Add fixed lights along the path
+    for (let i = 0; i < 10; i++) {
+      const leftLight = new THREE.PointLight(0xffffff, 1, 50);
+      const rightLight = new THREE.PointLight(0xffffff, 1, 50);
 
-      const group = new THREE.Group();
-      group.add(leftLight, rightLight);
-      group.position.y = yPos;
+      leftLight.position.set(-5, 3, -i * 50);
+      rightLight.position.set(5, 3, -i * 50);
 
-      return group;
-    };
-
-    // Create lights for each section
-    const sectionCount = 5;
-    for (let i = 0; i < sectionCount; i++) {
-      const sectionLights = createSectionLights(-i * 50); // Match section spacing
-      scene.add(sectionLights);
+      scene.add(leftLight, rightLight);
     }
 
     // Animation loop
     const animate = () => {
+      // Animate shapes
+      shapes.forEach((shape, i) => {
+        shape.rotation.y += 0.002;
+      });
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     };
@@ -107,7 +137,7 @@ export default function Scene() {
     if (!cameraRef.current) return;
 
     gsap.to(cameraRef.current.position, {
-      y: currentSection * -50 + 2, // Keep camera slightly elevated
+      z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
       ease: "power2.inOut"
     });
