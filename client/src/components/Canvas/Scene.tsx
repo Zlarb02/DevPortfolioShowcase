@@ -20,7 +20,7 @@ export default function Scene() {
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
-  const currentSection = useStore(state => state.currentSection);
+  const currentSection = useStore((state) => state.currentSection);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -36,24 +36,25 @@ export default function Scene() {
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1000,
     );
     camera.position.set(0, 2, 10); // Fixed height above ground
     cameraRef.current = camera;
 
-    // Renderer setup with enhanced quality
-    const renderer = new THREE.WebGLRenderer({ 
+    // Renderer setup with optimized quality
+    const renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      precision: "highp"
+      precision: "mediump", // Lower precision to reduce GPU load
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Lower pixel ratio
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    // Use the updated property name for outputEncoding
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.BasicShadowMap; // Use simpler shadow map
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -62,12 +63,12 @@ export default function Scene() {
     // Use simpler material to avoid exceeding texture limits
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      roughness: 0.1,
-      metalness: 0.2,
+      roughness: 0.3,
+      metalness: 0.1,
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.z = -500; // Center the long floor
+    floor.position.z = -400; // Center the long floor
     floor.receiveShadow = true;
     scene.add(floor);
 
@@ -75,7 +76,7 @@ export default function Scene() {
     const shapes = [];
     for (let i = 0; i < 5; i++) {
       let geometry;
-      switch(i) {
+      switch (i) {
         case 0: // Home
           geometry = new THREE.TorusGeometry(3, 0.5, 32, 100);
           break;
@@ -113,19 +114,37 @@ export default function Scene() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    // Add fixed lights along the path with shadows
-    for (let i = 0; i < 10; i++) {
-      const leftLight = new THREE.SpotLight(0xffffff, 0.8, 50, Math.PI / 4, 0.5, 1);
-      const rightLight = new THREE.SpotLight(0xffffff, 0.8, 50, Math.PI / 4, 0.5, 1);
+    // Add fewer lights along the path with optimized shadow settings
+    // Use a single directional light for main lighting
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+    mainLight.position.set(0, 10, 0);
+    mainLight.castShadow = true;
 
-      leftLight.position.set(-5, 5, -i * 50);
-      rightLight.position.set(5, 5, -i * 50);
+    // Optimize shadow map settings
+    mainLight.shadow.mapSize.width = 512; // Lower resolution
+    mainLight.shadow.mapSize.height = 512; // Lower resolution
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 50;
+    scene.add(mainLight);
 
-      leftLight.castShadow = true;
-      rightLight.castShadow = true;
+    // Add just a few spotlights for effect (only 3 instead of 20)
+    for (let i = 0; i < 3; i++) {
+      const spotLight = new THREE.SpotLight(
+        0xffffff,
+        0.7,
+        50,
+        Math.PI / 6,
+        0.5,
+        1,
+      );
+      spotLight.position.set(0, 8, -i * 150 - 50);
+      spotLight.castShadow = true;
 
-      scene.add(leftLight);
-      scene.add(rightLight);
+      // Optimize shadow map settings
+      spotLight.shadow.mapSize.width = 512;
+      spotLight.shadow.mapSize.height = 512;
+
+      scene.add(spotLight);
     }
 
     // Animation loop with enhanced shape animation
@@ -163,7 +182,7 @@ export default function Scene() {
     gsap.to(cameraRef.current.position, {
       z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
-      ease: "power2.inOut"
+      ease: "power2.inOut",
     });
 
     // Smooth background color transition
@@ -176,8 +195,8 @@ export default function Scene() {
   }, [currentSection]);
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="fixed top-0 left-0 w-full h-full z-[-1]"
     />
   );
