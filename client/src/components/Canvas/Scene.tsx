@@ -180,24 +180,14 @@ class Bird {
       // Interpoler doucement vers la rotation cible (effet de lissage)
       this.mesh.quaternion.slerp(targetRotation, 0.1);
 
-      // Animation des ailes plus réaliste
-      const wingFlapSpeed = Math.min(5, this.velocity.length() * 10);
-      const wingRotation = Math.sin(Date.now() * 0.01 * wingFlapSpeed) * 0.3;
+      // Animation des ailes supprimée
 
-      // Appliquer la rotation uniquement aux ailes et non à tout le corps
-      // Récupérer les ailes (deuxième et troisième éléments de la géométrie fusionnée)
+      // Animation de battement d'ailes supprimée
       if (this.mesh.geometry.groups && this.mesh.geometry.groups.length > 1) {
-        // Modification de la matrice locale uniquement pour les ailes (segment 1 et 2)
-        const position = this.mesh.position.clone();
-        this.mesh.updateMatrix();
-
-        // Animer les ailes sans faire basculer tout le corps
-        this.mesh.geometry.groups[1].materialIndex = 0; // Assurer l'index matériel
-        this.mesh.geometry.groups[2].materialIndex = 0; // Assurer l'index matériel
+        // Garder les index des matériaux mais sans animation
+        this.mesh.geometry.groups[1].materialIndex = 0;
+        this.mesh.geometry.groups[2].materialIndex = 0;
       }
-
-      // Appliquer la rotation aux ailes en utilisant la matrice de rotation
-      this.mesh.rotateX(wingRotation);
     }
   }
 }
