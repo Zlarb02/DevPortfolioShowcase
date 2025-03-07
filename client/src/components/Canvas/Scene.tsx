@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useStore } from '@/lib/store';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Scene() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,17 +18,17 @@ export default function Scene() {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#111111');
+    scene.background = new THREE.Color('#f5f5f5');
     sceneRef.current = scene;
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
-      75,
+      45,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0, 0, 50);
+    camera.position.set(0, 0, 15);
     cameraRef.current = camera;
 
     // Renderer setup
@@ -39,54 +42,38 @@ export default function Scene() {
     rendererRef.current = renderer;
 
     // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Create particles for background
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 1000;
-    const positions = new Float32Array(particlesCount * 3);
-
-    for(let i = 0; i < particlesCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 100;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 500 - 100; // Spread vertically
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
-    }
-
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.2,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.8
-    });
-
-    const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particles);
-
-    // Add section lights
+    // Add point lights for each section
     const sectionLights = [
-      new THREE.PointLight(0xffa07a, 2, 50), // Home - Warm
-      new THREE.PointLight(0x4169e1, 2, 50), // Services - Blue
-      new THREE.PointLight(0xff1493, 2, 50), // Projects - Pink
-      new THREE.PointLight(0xffffff, 2, 50), // About - White
-      new THREE.PointLight(0xffa07a, 2, 50)  // Contact - Warm
+      new THREE.PointLight(0xffa07a, 1, 100), // Home
+      new THREE.PointLight(0x4169e1, 1, 100), // Services
+      new THREE.PointLight(0xff1493, 1, 100), // Projects
+      new THREE.PointLight(0xffffff, 1, 100), // About
+      new THREE.PointLight(0xffa07a, 1, 100)  // Contact
     ];
 
     sectionLights.forEach((light, index) => {
-      light.position.set(
-        Math.sin(index * Math.PI * 0.4) * 20,
-        -index * 100,
-        Math.cos(index * Math.PI * 0.4) * 20
-      );
+      light.position.set(5, -index * 10, 5);
       scene.add(light);
     });
 
+    // Add a simple geometry for visual reference
+    const geometry = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
+    const material = new THREE.MeshStandardMaterial({ 
+      color: 0x6366f1,
+      roughness: 0.3,
+      metalness: 0.7
+    });
+    const torusKnot = new THREE.Mesh(geometry, material);
+    scene.add(torusKnot);
+
     // Animation loop
     const animate = () => {
-      if (!particles) return;
-      particles.rotation.y += 0.0005;
-      particles.rotation.x += 0.0002;
+      if (!torusKnot) return;
+      torusKnot.rotation.x += 0.01;
+      torusKnot.rotation.y += 0.01;
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     };
@@ -94,7 +81,6 @@ export default function Scene() {
 
     // Handle resize
     const handleResize = () => {
-      if (!camera || !renderer) return;
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -114,14 +100,8 @@ export default function Scene() {
     if (!cameraRef.current) return;
 
     gsap.to(cameraRef.current.position, {
-      y: currentSection * -100,
-      duration: 2,
-      ease: "power2.inOut"
-    });
-
-    gsap.to(cameraRef.current.rotation, {
-      z: currentSection * Math.PI * 0.1,
-      duration: 2,
+      y: currentSection * -10,
+      duration: 1.5,
       ease: "power2.inOut"
     });
   }, [currentSection]);

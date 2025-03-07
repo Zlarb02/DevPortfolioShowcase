@@ -14,41 +14,35 @@ export default function Home() {
   const setCurrentSection = useStore(state => state.setCurrentSection);
 
   useEffect(() => {
-    // Prevent default scroll behavior
-    document.body.style.overflow = 'hidden';
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY;
-      const scrollHeight = window.innerHeight * 4; // 5 sections - 1
-      const currentScroll = window.scrollY;
-      const newScroll = Math.max(0, Math.min(scrollHeight, currentScroll + delta));
-
-      window.scrollTo({
-        top: newScroll,
-        behavior: 'smooth'
-      });
-
-      const progress = newScroll / scrollHeight;
+    const handleScroll = () => {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = window.scrollY / scrollHeight;
       setScrollProgress(progress);
 
-      // Update current section
-      const currentSection = Math.floor((progress * 5));
+      // Update current section based on scroll position
+      const sectionHeight = window.innerHeight;
+      const currentSection = Math.floor(window.scrollY / sectionHeight);
       setCurrentSection(currentSection);
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
+    // Set up smooth scrolling
+    gsap.to("html, body", {
+      scrollTrigger: {
+        trigger: "body",
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1,
+      }
+    });
 
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      document.body.style.overflow = 'auto';
-    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
 
   return (
-    <div className="h-[500vh] relative">
+    <div className="relative">
       <Scene />
-      <div className="fixed top-0 left-0 w-full h-screen pointer-events-none">
+      <div className="relative">
         <Section id="home">
           <SectionContent 
             title="Welcome"
