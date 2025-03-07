@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { useStore } from '@/lib/store';
 
 interface SectionProps {
@@ -7,18 +7,76 @@ interface SectionProps {
 }
 
 export default function Section({ id, children }: SectionProps) {
-  const [isActive, setIsActive] = useState(false);
+  const [state, setState] = useState<'inactive' | 'active' | 'leaving-up' | 'leaving-down' | 'entering-up' | 'entering-down'>('inactive');
   const currentSection = useStore(state => state.currentSection);
+  const prevSectionRef = useRef<number | null>(null);
+  
+  const SECTION_IDS = ['home', 'services', 'projects', 'about', 'contact'];
+  const sectionIndex = SECTION_IDS.indexOf(id);
 
   useEffect(() => {
-    const sectionIndex = ['home', 'services', 'projects', 'about', 'contact'].indexOf(id);
-    setIsActive(currentSection === sectionIndex);
-  }, [currentSection, id]);
+    // Si c'est la première fois, initialiser prevSectionRef
+    if (prevSectionRef.current === null) {
+      prevSectionRef.current = currentSection;
+      
+      if (currentSection === sectionIndex) {
+        setState('active');
+      }
+      return;
+    }
+    
+    const prevSection = prevSectionRef.current;
+    
+    // Déterminer si l'utilisateur défile vers le haut ou vers le bas
+    const isScrollingDown = currentSection > prevSection;
+    
+    // Si cette section devient active
+    if (currentSection === sectionIndex) {
+      // Définir la classe d'entrée appropriée en fonction de la direction du défilement
+      setState(isScrollingDown ? 'entering-down' : 'entering-up');
+      
+      // Appliquer la classe active après un court délai pour l'animation
+      setTimeout(() => {
+        setState('active');
+      }, 50);
+    } 
+    // Si cette section était active mais ne l'est plus
+    else if (prevSection === sectionIndex) {
+      // Définir la classe de sortie appropriée en fonction de la direction du défilement
+      setState(isScrollingDown ? 'leaving-up' : 'leaving-down');
+      
+      // Revenir à l'état inactif après l'animation
+      setTimeout(() => {
+        setState('inactive');
+      }, 500);
+    }
+    
+    // Mettre à jour la référence à la section précédente
+    prevSectionRef.current = currentSection;
+  }, [currentSection, sectionIndex]);
+
+  // Mapper l'état aux classes CSS
+  const getClassName = () => {
+    switch (state) {
+      case 'active':
+        return 'p-8 active';
+      case 'leaving-up':
+        return 'p-8 leaving-up';
+      case 'leaving-down':
+        return 'p-8 leaving-down';
+      case 'entering-up':
+        return 'p-8 entering-up';
+      case 'entering-down':
+        return 'p-8 entering-down';
+      default:
+        return 'p-8';
+    }
+  };
 
   return (
     <section 
       id={id}
-      className={`p-8 ${isActive ? 'active' : ''}`}
+      className={getClassName()}
     >
       {children}
     </section>

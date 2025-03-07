@@ -14,6 +14,9 @@ export default function Home() {
   const [scrollProgress, setScrollProgress] = useState(0.02);
   const setCurrentSection = useStore(state => state.setCurrentSection);
 
+  // Ajouter une référence à la section précédente pour détecter la direction du défilement
+  const [prevScrollY, setPrevScrollY] = useState(0);
+  
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -28,13 +31,18 @@ export default function Home() {
       // Calculate current section (integer)
       const currentSection = Math.floor(exactPosition);
       
+      // Détecter la direction du défilement (vers le haut ou vers le bas)
+      const isScrollingDown = window.scrollY > prevScrollY;
+      setPrevScrollY(window.scrollY);
+      
       // Update both exact position and section in store
-      setCurrentSection(currentSection, exactPosition);
+      // Ajouter la direction du défilement comme paramètre supplémentaire
+      setCurrentSection(currentSection, exactPosition, isScrollingDown);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [setCurrentSection]);
+  }, [setCurrentSection, prevScrollY]);
 
   const handleProgressBarClick = (targetProgress: number) => {
     const totalHeight = document.documentElement.scrollHeight - window.innerHeight;

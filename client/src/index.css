@@ -36,17 +36,39 @@
   top: 13%;
 }
 
-/* Individual section styling */
+/* Individual section styling with transitions */
 section {
   @apply absolute top-0 left-0 w-full h-full flex flex-col items-center justify-start pt-[25vh];
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.5s ease-in-out;
+  transform: translateY(50px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
 section.active {
   opacity: 1;
   pointer-events: auto;
+  transform: translateY(0);
+}
+
+section.leaving-up {
+  opacity: 0;
+  transform: translateY(-50px);
+  transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+section.entering-down {
+  transform: translateY(50px);
+}
+
+section.leaving-down {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+section.entering-up {
+  transform: translateY(-50px);
 }
 
 /* Make sure content is scrollable but without scrollbars */
