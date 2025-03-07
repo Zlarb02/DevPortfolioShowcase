@@ -37,7 +37,7 @@ export default function Home() {
       // Update the store with the current section (bounded to valid sections)
       const boundedSection = Math.max(0, Math.min(numSections - 1, newSection));
       const exactPosition = newSection + (invertedPosition % sectionHeight) / sectionHeight;
-      setCurrentSection(boundedSection, exactPosition, isScrollingDown);s, 1));
+      setCurrentSection(boundedSection, exactPosition, isScrollingDown);
 
       // Calculate exact position between sections (0 to 4 with decimals)
       const sectionHeight = window.innerHeight;
