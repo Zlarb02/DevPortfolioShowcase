@@ -1,4 +1,3 @@
-
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
@@ -8,6 +7,10 @@ export class Bird {
   position: THREE.Vector3;
   leader: Bird | null;
   offset: THREE.Vector3;
+  wingAngle: number;
+  wingSpeed: number;
+  initialHeight:number;
+
 
   constructor(scene: THREE.Scene, position: THREE.Vector3, leader: Bird | null = null) {
     // Créer une forme d'oiseau plus élaborée avec des ailes
@@ -56,6 +59,7 @@ export class Bird {
     // Initialiser la position
     this.position = position;
     this.mesh.position.copy(position);
+    this.initialHeight = position.y;
 
     // Direction initiale vers le bas de la scène
     this.velocity = new THREE.Vector3(
@@ -70,6 +74,10 @@ export class Bird {
     if (leader) {
       this.offset.copy(this.position).sub(leader.position);
     }
+
+    // Paramètres pour l'animation des ailes (plus lent)
+    this.wingAngle = Math.random() * Math.PI;
+    this.wingSpeed = 0.05 + Math.random() * 0.03; // Vitesse réduite pour un battement plus lent
   }
 
   update() {
@@ -106,6 +114,20 @@ export class Bird {
     }
 
     // Animation de battement d'ailes
-    // À implémenter
+    this.wingAngle += this.wingSpeed;
+
+
+    // Permettre des variations de hauteur tout en restant dans des limites raisonnables
+    // Seulement corriger si l'oiseau s'écarte trop de sa hauteur initiale
+    const heightDifference = this.initialHeight - this.position.y;
+    const heightVariationLimit = 3.0; // Permet de s'écarter de 3 unités de la hauteur initiale
+
+    if (Math.abs(heightDifference) > heightVariationLimit) {
+      // Correction douce pour revenir vers la zone de hauteur acceptable
+      this.velocity.y += heightDifference * 0.003;
+    } else {
+      // Petites variations aléatoires de hauteur
+      this.velocity.y += (Math.random() - 0.5) * 0.002;
+    }
   }
 }

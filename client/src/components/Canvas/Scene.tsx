@@ -221,10 +221,10 @@ export default function Scene() {
           const side = i % 2 === 0 ? 1 : -1;
           const row = Math.floor(i / 2) + 1;
 
-          // Formation plus resserrée pour moins de dispersion
+          // Formation avec plus de variations de hauteur
           const followerPos = new THREE.Vector3(
             leaderPos.x + side * row * 1.2,
-            leaderPos.y - row * 0.4,
+            leaderPos.y - row * 0.4 + (Math.random() - 0.5) * 2, // Plus de variation verticale
             leaderPos.z - row * 1.5
           );
 
