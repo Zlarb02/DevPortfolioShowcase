@@ -14,6 +14,9 @@ export default function Home() {
   const setCurrentSection = useStore(state => state.setCurrentSection);
 
   useEffect(() => {
+    const sections = document.querySelectorAll('.section-container');
+    const totalSections = sections.length;
+
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       const progress = window.scrollY / scrollHeight;
@@ -25,56 +28,60 @@ export default function Home() {
       setCurrentSection(currentSection);
     };
 
-    // Set up smooth scrolling
-    gsap.to("html, body", {
-      scrollTrigger: {
-        trigger: "body",
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1,
-      }
-    });
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
+
+  const handleProgressBarClick = (targetProgress: number) => {
+    const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const targetScroll = targetProgress * totalHeight;
+
+    // Smooth scroll to target section
+    window.scrollTo({
+      top: targetScroll,
+      behavior: 'smooth'
+    });
+  };
 
   return (
     <div className="relative">
       <Scene />
       <div className="relative">
-        <Section id="home">
+        <Section id="home" className="section-container">
           <SectionContent 
             title="Welcome"
             content="Interactive developer specializing in immersive web experiences"
           />
         </Section>
-        <Section id="services">
+        <Section id="services" className="section-container">
           <SectionContent 
             title="Services"
             content="Web Development • 3D Visualization • Interactive Design"
           />
         </Section>
-        <Section id="projects">
+        <Section id="projects" className="section-container">
           <SectionContent 
             title="Projects"
             content="Explore my latest work and creative experiments"
           />
         </Section>
-        <Section id="about">
+        <Section id="about" className="section-container">
           <SectionContent 
             title="About"
             content="Crafting digital experiences that push the boundaries of web technology"
           />
         </Section>
-        <Section id="contact">
+        <Section id="contact" className="section-container">
           <SectionContent 
             title="Contact"
             content="hello@pogodev.com"
           />
         </Section>
       </div>
-      <ProgressBar progress={scrollProgress} />
+      <ProgressBar 
+        progress={scrollProgress} 
+        onNavigate={handleProgressBarClick}
+      />
     </div>
   );
 }
