@@ -230,13 +230,15 @@ export default function Scene() {
       duration: 1.5,
     });
 
-    // Also apply the color to the floor
-    gsap.to(floorMaterialRef.current.color, {
-      r: targetColor.r,
-      g: targetColor.g,
-      b: targetColor.b,
-      duration: 1.5,
-    });
+    // Update floor material color to match the current section
+    if (floorMaterialRef.current) {
+      gsap.to(floorMaterialRef.current.color, {
+        r: targetColor.r,
+        g: targetColor.g,
+        b: targetColor.b,
+        duration: 1.5,
+      });
+    }
   }, [exactScrollPosition]);
 
   return (
