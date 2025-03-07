@@ -1,7 +1,7 @@
 
 import * as THREE from "three";
 import { useEffect, useRef, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { gsap } from "gsap";
 import Lights from "./Lights";
 import { useStore } from "@/lib/store";
@@ -15,7 +15,8 @@ export const SECTION_COLORS = [
   new THREE.Color(0xffd700), // Contact - Gold
 ];
 
-export default function Scene() {
+// The actual 3D scene content
+function SceneContent() {
   const sceneRef = useRef<THREE.Scene>(null!);
   const floorRef = useRef<THREE.Mesh>(null!);
   const [lightsInstance, setLightsInstance] = useState<Lights | null>(null);
@@ -181,4 +182,17 @@ export default function Scene() {
   });
 
   return null;
+}
+
+// Wrapper component that provides the Canvas
+export default function Scene() {
+  return (
+    <Canvas
+      shadows
+      camera={{ position: [0, 5, 10], fov: 75 }}
+      style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}
+    >
+      <SceneContent />
+    </Canvas>
+  );
 }
