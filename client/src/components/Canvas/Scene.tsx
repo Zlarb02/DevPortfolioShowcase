@@ -3,6 +3,9 @@ import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
+import { Bird } from "./Bird";
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 // Class pour créer un oiseau individuel
 class Bird {
@@ -208,6 +211,8 @@ export default function Scene() {
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const floorMaterialRef = useRef<THREE.MeshStandardMaterial>();
   const currentSection = useStore((state) => state.currentSection);
+  const fontLoader = new FontLoader();
+
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -368,7 +373,7 @@ export default function Scene() {
       // Ajouter plus d'oiseaux aux sections extrêmes
       for (let f = 0; f < 7; f++) {
         const flock = [];
-        
+
         // Distribution spéciale pour avoir plus d'oiseaux dans les sections extrêmes
         let sectionZ;
         if (f < 2) {
@@ -420,6 +425,44 @@ export default function Scene() {
     };
 
     const birdFlocks = createBirdFlocks();
+
+    // Function to add 3D text
+    const add3DText = async (text: string, x: number, y: number, z: number) => {
+      const font = await new Promise<THREE.Font>(resolve => {
+        fontLoader.load(
+          '/helvetiker_regular.typeface.json',
+          resolve,
+          undefined,
+          (err) => console.error('An error happened:', err)
+        );
+      });
+      const geometry = new TextGeometry(text, {
+        font: font,
+        size: 1,
+        height: 0.2,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelOffset: 0,
+        bevelSegments: 5,
+      });
+      const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(x, y, z);
+      scene.add(mesh);
+    };
+
+    // Add 3D text at various positions
+    const textPositions = [
+      { text: 'Bienvenue', x: 10, y: 5, z: -100 },
+      { text: 'Services', x: -10, y: 5, z: -200 },
+      { text: 'Projets', x: 10, y: 5, z: -300 },
+      { text: 'A propos', x: -10, y: 5, z: -400 },
+      { text: 'Contact', x: 10, y: 5, z: -500 },
+    ];
+    textPositions.forEach(pos => add3DText(pos.text, pos.x, pos.y, pos.z));
+
 
     // Animation loop with enhanced shape animation
     const animate = () => {
