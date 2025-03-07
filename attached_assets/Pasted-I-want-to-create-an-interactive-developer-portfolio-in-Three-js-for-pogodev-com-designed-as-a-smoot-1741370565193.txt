@@ -1,0 +1,42 @@
+I want to create an interactive developer portfolio in Three.js for pogodev.com, designed as a smooth, immersive experience while remaining practical and professional.
+
+Project Concept:
+- The site will feature a full-screen 3D environment where the user moves between different sections using a smooth scrolling animation.
+- The interface will be minimalist and premium, with a focus on lighting transitions to differentiate each section.
+- The canvas will occupy 100% of the viewport, with no header, no footer, and no UI clutter—just the sections' content and a progress bar at the bottom for navigation.
+
+Site Structure & Sections:
+1. Home – A short introduction with a subtle first 3D interaction.
+2. Services – A concise breakdown of the solutions I offer.
+3. Projects & Work – The most important section, showcasing projects interactively.
+4. About – A brief introduction to my background and approach.
+5. Contact – Displays my email instead of a contact form.
+
+Navigation & Interactions:
+- Scrolling should smoothly animate the camera movement between sections.
+- A progress bar at the bottom allows for both scroll-based and click-based navigation.
+- Each section should have a distinct lighting setup, making transitions feel dynamic and immersive.
+
+Lighting Setup (Per Section):
+- Home: Soft ambient light with a warm directional glow to create an inviting atmosphere.
+- Services: A clean, cool-toned spotlight setup, evoking clarity and professionalism.
+- Projects & Work: Dynamic lighting with rim lights and moving ambient effects to highlight interactivity.
+- About: A balanced white light setup, ensuring easy readability and a refined look.
+- Contact: A warmer key light to gently draw focus to the email.
+
+Initial Development Focus:
+- First, ensure smooth scroll-based navigation with simple, elegant animations.
+- Implement camera movement that transitions fluidly between sections.
+- Ensure the progress bar updates correctly as the user scrolls.
+- The environment should be visually appealing yet simple, without unnecessary complexity.
+
+Replit, can you generate a development environment with:
+- A basic Three.js setup with GSAP ScrollTrigger preinstalled.
+- A full-screen canvas (100% of the viewport), with no header or footer.
+- A working scroll-based navigation system with smooth transitions.
+- A simple, elegant lighting setup per section.
+- A progress bar at the bottom for direct navigation.
+
+Start by focusing on the scrolling animation and camera transitions first. We will refine the visuals afterward.
+
+Thank you!
