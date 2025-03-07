@@ -9,5 +9,21 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
   }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Ensure sections stay centered during scroll */
+.section-container {
+  @apply min-h-screen flex items-center justify-center;
+  height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }

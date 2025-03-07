@@ -11,6 +11,7 @@ export default function Scene() {
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
+  const lightsRef = useRef<THREE.Points>();
   const currentSection = useStore(state => state.currentSection);
 
   useEffect(() => {
@@ -18,17 +19,18 @@ export default function Scene() {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#f5f5f5');
+    scene.fog = new THREE.FogExp2(0xffffff, 0.05);
+    scene.background = new THREE.Color(0xffffff);
     sceneRef.current = scene;
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
-      45,
+      60,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0, 0, 15);
+    camera.position.set(0, 0, 20);
     cameraRef.current = camera;
 
     // Renderer setup
@@ -41,39 +43,54 @@ export default function Scene() {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    // Create floating lights
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 1000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      // Position
+      positions[i * 3] = (Math.random() - 0.5) * 50;  // x
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 200 - 50;  // y, spread across sections
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 50;  // z
+
+      // Color - soft pastel colors
+      colors[i * 3] = 0.8 + Math.random() * 0.2;  // r
+      colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;  // g
+      colors[i * 3 + 2] = 0.8 + Math.random() * 0.2;  // b
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      size: 0.2,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    const points = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(points);
+    lightsRef.current = points;
+
     // Add ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Add point lights for each section
-    const sectionLights = [
-      new THREE.PointLight(0xffa07a, 1, 100), // Home
-      new THREE.PointLight(0x4169e1, 1, 100), // Services
-      new THREE.PointLight(0xff1493, 1, 100), // Projects
-      new THREE.PointLight(0xffffff, 1, 100), // About
-      new THREE.PointLight(0xffa07a, 1, 100)  // Contact
-    ];
-
-    sectionLights.forEach((light, index) => {
-      light.position.set(5, -index * 10, 5);
-      scene.add(light);
-    });
-
-    // Add a simple geometry for visual reference
-    const geometry = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
-    const material = new THREE.MeshStandardMaterial({ 
-      color: 0x6366f1,
-      roughness: 0.3,
-      metalness: 0.7
-    });
-    const torusKnot = new THREE.Mesh(geometry, material);
-    scene.add(torusKnot);
-
     // Animation loop
     const animate = () => {
-      if (!torusKnot) return;
-      torusKnot.rotation.x += 0.01;
-      torusKnot.rotation.y += 0.01;
+      if (!lightsRef.current) return;
+
+      // Gentle floating animation for lights
+      lightsRef.current.rotation.y += 0.0005;
+      const positions = lightsRef.current.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < positions.length; i += 3) {
+        positions[i + 1] += Math.sin(Date.now() * 0.001 + i) * 0.01;
+      }
+      lightsRef.current.geometry.attributes.position.needsUpdate = true;
+
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     };
@@ -100,7 +117,7 @@ export default function Scene() {
     if (!cameraRef.current) return;
 
     gsap.to(cameraRef.current.position, {
-      y: currentSection * -10,
+      y: currentSection * -50,  // Increased spacing between sections
       duration: 1.5,
       ease: "power2.inOut"
     });
