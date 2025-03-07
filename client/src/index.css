@@ -10,8 +10,10 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
     scroll-behavior: smooth;
   }
 
@@ -24,12 +26,14 @@
 /* Container for all sections - this is what scrolls */
 .sections-container {
   @apply relative;
-  height: 500vh; /* 5 sections * 100vh */
+  height: 500vh;
+  /* 5 sections * 100vh */
 }
 
 /* Container for fixed sections */
 .fixed-sections {
-  @apply fixed top-0 left-0 w-full h-screen;
+  @apply fixed left-0 w-full h-screen;
+  top: 13%;
 }
 
 /* Individual section styling */
@@ -43,4 +47,9 @@ section {
 section.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+body {
+  overflow: hidden;
+  /* Hide scrollbars */
 }

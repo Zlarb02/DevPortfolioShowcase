@@ -10,14 +10,16 @@ import { useStore } from '@/lib/store';
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
-  const [scrollProgress, setScrollProgress] = useState(0);
+  // Initialize with a small value to make progress bar visible
+  const [scrollProgress, setScrollProgress] = useState(0.02);
   const setCurrentSection = useStore(state => state.setCurrentSection);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = window.scrollY / scrollHeight;
-      setScrollProgress(progress);
+      // Add small offset to always show some progress
+      const progress = (window.scrollY / scrollHeight) + 0.02;
+      setScrollProgress(Math.min(progress, 1));
 
       // Update current section based on scroll position
       const sectionHeight = window.innerHeight;

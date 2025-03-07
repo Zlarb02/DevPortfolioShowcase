@@ -20,14 +20,14 @@ export default function Scene() {
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
-  const currentSection = useStore((state) => state.currentSection);
+  const currentSection = useStore(state => state.currentSection);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffffff, 0.015); // Subtle fog for depth
+    scene.fog = new THREE.FogExp2(0xffffff, 0.008); // Reduced fog for better depth perception
     scene.background = SECTION_COLORS[0];
     sceneRef.current = scene;
 
@@ -41,87 +41,103 @@ export default function Scene() {
     camera.position.set(0, 2, 10); // Fixed height above ground
     cameraRef.current = camera;
 
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({
+    // Renderer setup with enhanced quality
+    const renderer = new THREE.WebGLRenderer({ 
       antialias: true,
       alpha: true,
+      precision: "highp"
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Add floor
+    // Add reflective floor
     const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
-    const floorMaterial = new THREE.MeshStandardMaterial({
+    const floorMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      roughness: 0.3,
+      roughness: 0.1,
       metalness: 0.2,
+      reflectivity: 0.5,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.2
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.z = -400; // Center the long floor
+    floor.position.z = -500; // Center the long floor
+    floor.receiveShadow = true;
     scene.add(floor);
 
-    // Add geometric shapes for each section
+    // Add geometric shapes for each section with enhanced materials
     const shapes = [];
     for (let i = 0; i < 5; i++) {
       let geometry;
-      switch (i) {
+      switch(i) {
         case 0: // Home
-          geometry = new THREE.TorusGeometry(3, 0.5, 16, 50);
+          geometry = new THREE.TorusGeometry(3, 0.5, 32, 100);
           break;
         case 1: // Services
-          geometry = new THREE.OctahedronGeometry(3);
+          geometry = new THREE.OctahedronGeometry(3, 2);
           break;
         case 2: // Projects
-          geometry = new THREE.IcosahedronGeometry(3);
+          geometry = new THREE.IcosahedronGeometry(3, 1);
           break;
         case 3: // About
-          geometry = new THREE.DodecahedronGeometry(3);
+          geometry = new THREE.DodecahedronGeometry(3, 1);
           break;
         case 4: // Contact
-          geometry = new THREE.TorusKnotGeometry(2, 0.5);
+          geometry = new THREE.TorusKnotGeometry(2, 0.5, 128, 32);
           break;
       }
 
       const material = new THREE.MeshPhysicalMaterial({
         color: 0x6366f1,
-        roughness: 0.2,
-        metalness: 0.8,
-        clearcoat: 0.5,
+        roughness: 0.1,
+        metalness: 0.9,
+        clearcoat: 1.0,
         clearcoatRoughness: 0.1,
+        reflectivity: 1.0,
+        envMapIntensity: 1.5
       });
 
       const shape = new THREE.Mesh(geometry, material);
-      shape.position.set(0, 0, -i * 100 - 50); // Space shapes along the path
-      shape.rotation.x = -Math.PI / 6; // Tilt slightly for better visibility
+      shape.position.set(0, 0, -i * 100 - 50);
+      shape.rotation.x = -Math.PI / 6;
+      shape.castShadow = true;
+      shape.receiveShadow = true;
       shapes.push(shape);
       scene.add(shape);
     }
 
-    // Add ambient light
+    // Enhanced lighting setup
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    // Add fixed lights along the path
+    // Add fixed lights along the path with shadows
     for (let i = 0; i < 10; i++) {
-      const leftLight = new THREE.PointLight(0xffffff, 0.8, 50);
-      const rightLight = new THREE.PointLight(0xffffff, 0.8, 50);
+      const leftLight = new THREE.SpotLight(0xffffff, 0.8, 50, Math.PI / 4, 0.5, 1);
+      const rightLight = new THREE.SpotLight(0xffffff, 0.8, 50, Math.PI / 4, 0.5, 1);
 
-      leftLight.position.set(-5, 3, -i * 50);
-      rightLight.position.set(5, 3, -i * 50);
+      leftLight.position.set(-5, 5, -i * 50);
+      rightLight.position.set(5, 5, -i * 50);
 
-      scene.add(leftLight, rightLight);
+      leftLight.castShadow = true;
+      rightLight.castShadow = true;
+
+      scene.add(leftLight);
+      scene.add(rightLight);
     }
 
-    // Animation loop
+    // Animation loop with enhanced shape animation
     const animate = () => {
-      // Animate shapes
       shapes.forEach((shape) => {
         shape.rotation.y += 0.002;
+        shape.rotation.z += 0.001;
       });
 
       renderer.render(scene, camera);
@@ -145,17 +161,17 @@ export default function Scene() {
     };
   }, []);
 
-  // Handle section changes with smooth camera movement and background color transition
+  // Handle section changes with smooth camera movement and enhanced color transition
   useEffect(() => {
     if (!cameraRef.current || !sceneRef.current) return;
 
     gsap.to(cameraRef.current.position, {
       z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
-      ease: "power2.inOut",
+      ease: "power2.inOut"
     });
 
-    // Transition background color
+    // Smooth background color transition
     gsap.to(sceneRef.current.background as THREE.Color, {
       r: SECTION_COLORS[currentSection].r,
       g: SECTION_COLORS[currentSection].g,
@@ -165,8 +181,8 @@ export default function Scene() {
   }, [currentSection]);
 
   return (
-    <div
-      ref={containerRef}
+    <div 
+      ref={containerRef} 
       className="fixed top-0 left-0 w-full h-full z-[-1]"
     />
   );
