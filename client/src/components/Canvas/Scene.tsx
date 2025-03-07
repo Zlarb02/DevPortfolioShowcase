@@ -111,42 +111,66 @@ export default function Scene() {
       scene.add(shape);
     }
 
-    // Enhanced lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
+    // Create section-specific lights with appropriate colors
+    const sectionLights = {
+      home: [
+        new THREE.AmbientLight(0xf9e8d0, 0.5),
+        new THREE.DirectionalLight(0xffa07a, 1)
+      ],
+      services: [
+        new THREE.AmbientLight(0xd0e8f9, 0.3),
+        new THREE.SpotLight(0x4169e1, 1)
+      ],
+      projects: [
+        new THREE.AmbientLight(0xe8d0f9, 0.4),
+        new THREE.PointLight(0xff1493, 1),
+        new THREE.PointLight(0x4169e1, 1)
+      ],
+      about: [
+        new THREE.AmbientLight(0xd0f9e8, 0.7),
+        new THREE.DirectionalLight(0xffffff, 0.5)
+      ],
+      contact: [
+        new THREE.AmbientLight(0xf9d0d0, 0.4),
+        new THREE.SpotLight(0xffa07a, 1)
+      ]
+    };
 
-    // Add fewer lights along the path with optimized shadow settings
-    // Use a single directional light for main lighting
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
-    mainLight.position.set(0, 10, 0);
-    mainLight.castShadow = true;
+    // Position the lights
+    // Home section
+    sectionLights.home[1].position.set(5, 5, -50);
+    sectionLights.home[1].castShadow = true;
 
-    // Optimize shadow map settings
-    mainLight.shadow.mapSize.width = 512; // Lower resolution
-    mainLight.shadow.mapSize.height = 512; // Lower resolution
-    mainLight.shadow.camera.near = 0.5;
-    mainLight.shadow.camera.far = 50;
-    scene.add(mainLight);
+    // Services section
+    sectionLights.services[1].position.set(-5, 5, -150);
+    (sectionLights.services[1] as THREE.SpotLight).angle = Math.PI / 4;
+    sectionLights.services[1].castShadow = true;
 
-    // Add just a few spotlights for effect (only 3 instead of 20)
-    for (let i = 0; i < 3; i++) {
-      const spotLight = new THREE.SpotLight(
-        0xffffff,
-        0.7,
-        50,
-        Math.PI / 6,
-        0.5,
-        1,
-      );
-      spotLight.position.set(0, 8, -i * 150 - 50);
-      spotLight.castShadow = true;
+    // Projects section
+    sectionLights.projects[1].position.set(5, 5, -250);
+    sectionLights.projects[2].position.set(-5, 5, -250);
+    sectionLights.projects[1].castShadow = true;
+    sectionLights.projects[2].castShadow = true;
 
-      // Optimize shadow map settings
-      spotLight.shadow.mapSize.width = 512;
-      spotLight.shadow.mapSize.height = 512;
+    // About section
+    sectionLights.about[1].position.set(0, 5, -350);
+    sectionLights.about[1].castShadow = true;
 
-      scene.add(spotLight);
-    }
+    // Contact section
+    sectionLights.contact[1].position.set(0, 5, -450);
+    (sectionLights.contact[1] as THREE.SpotLight).angle = Math.PI / 3;
+    sectionLights.contact[1].castShadow = true;
+
+    // Optimize shadow map settings for all lights
+    Object.values(sectionLights).flat().forEach(light => {
+      if (light instanceof THREE.DirectionalLight || light instanceof THREE.SpotLight) {
+        light.shadow.mapSize.width = 512;
+        light.shadow.mapSize.height = 512;
+        light.shadow.camera.near = 0.5;
+        light.shadow.camera.far = 50;
+      }
+      scene.add(light);
+    });
 
     // Animation loop with enhanced shape animation
     const animate = () => {
@@ -249,6 +273,39 @@ export default function Scene() {
         targetColor, 
         "for section:", 
         currentSection);
+    }
+
+    // Adjusting light intensities based on current section
+    if (sceneRef.current) {
+      const lights = sceneRef.current.children.filter(
+        child => child instanceof THREE.Light
+      ) as THREE.Light[];
+      
+      // Calculate distance factors for each section's lights
+      // to create a smooth transition between sections
+      const sectionKeys = ['home', 'services', 'projects', 'about', 'contact'];
+      const sectionIdx = currentSection;
+      const fraction = exactScrollPosition - sectionIdx;
+      
+      // Adjust intensity of each light based on distance to current scroll position
+      lights.forEach((light) => {
+        // Get the section this light belongs to
+        const lightZPosition = light.position.z;
+        const lightSectionIdx = Math.round(Math.abs(lightZPosition) / 100);
+        
+        // Calculate distance factor (closer to 1 when this is the active section)
+        const distance = Math.abs(sectionIdx - lightSectionIdx) + fraction;
+        const intensity = 1 - Math.min(distance * 0.7, 0.9); // Keep minimum 0.1 intensity
+        
+        // Apply intensity based on light type
+        if (light instanceof THREE.AmbientLight) {
+          gsap.to(light, { intensity: 0.3 + intensity * 0.7, duration: 1 });
+        } else if (light instanceof THREE.DirectionalLight || 
+                  light instanceof THREE.SpotLight || 
+                  light instanceof THREE.PointLight) {
+          gsap.to(light, { intensity: intensity * 1.2, duration: 1 });
+        }
+      });
     }
   }, [exactScrollPosition]);
 
