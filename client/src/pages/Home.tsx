@@ -13,7 +13,9 @@ export default function Home() {
   // Initialize with a small value to make progress bar visible
   const [scrollProgress, setScrollProgress] = useState(0.02);
   const setCurrentSection = useStore(state => state.setCurrentSection);
+  const currentSection = useStore(state => state.currentSection);
 
+  // Scroll handling effect
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -34,10 +36,16 @@ export default function Home() {
 
     // Initial call to set current section on load
     handleScroll();
+    console.log("Scroll handler initialized");
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
+
+  // Log when section changes for debugging
+  useEffect(() => {
+    console.log("Current section:", currentSection);
+  }, [currentSection]);
 
   const handleProgressBarClick = (targetProgress: number) => {
     const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
