@@ -1,3 +1,4 @@
+
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
@@ -72,74 +73,39 @@ export class Bird {
   }
 
   update() {
-    // Constantes pour un vol plus stable
-    const GROUND_HEIGHT = 5; // Altitude minimale
-    const MAX_HEIGHT = 12;   // Altitude maximale
-    const TARGET_HEIGHT = GROUND_HEIGHT + Math.random() * (MAX_HEIGHT - GROUND_HEIGHT);
-
-    // Si nous avons un leader, suivre le leader
     if (this.leader) {
-      // Force d'attraction vers la position relative
-      const target = new THREE.Vector3().copy(this.leader.position).add(this.offset);
-
-      // Maintenir une altitude stable (parallèle au sol)
-      target.y = GROUND_HEIGHT + (Math.random() * 2); // Légère variation d'altitude
-
-      const direction = new THREE.Vector3().subVectors(target, this.position);
-
-      // Normaliser et appliquer la force avec un facteur d'ajustement
-      direction.normalize().multiplyScalar(0.03);
-      this.velocity.add(direction);
+      // Suivre le leader avec la distance d'origine
+      const targetPosition = new THREE.Vector3().copy(this.leader.position).add(this.offset);
+      const steer = new THREE.Vector3().subVectors(targetPosition, this.position).multiplyScalar(0.05);
+      this.velocity.add(steer);
     } else {
-      // Comportement du leader - vol stable et parallèle au sol
-      // Stabiliser l'altitude - force vers l'altitude cible
-      const heightDiff = TARGET_HEIGHT - this.position.y;
-      this.velocity.y += heightDiff * 0.01;
-
-      // Mouvement horizontal uniquement
-      this.velocity.x += (Math.random() - 0.5) * 0.01;
-      this.velocity.z -= 0.01 + Math.random() * 0.01; // Avancer constamment
-
-      // Limiter strictement la vitesse verticale
-      this.velocity.y = Math.max(-0.03, Math.min(0.03, this.velocity.y));
+      // Le leader a un comportement plus libre
+      // Légère variation aléatoire dans la direction
+      this.velocity.add(
+        new THREE.Vector3(
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.01
+        )
+      );
     }
 
-    // Appliquer des limites de vitesse naturelles
-    const maxSpeed = 0.1;
+    // Limiter la vitesse maximale
+    const maxSpeed = this.leader ? 0.25 : 0.2;
     if (this.velocity.length() > maxSpeed) {
       this.velocity.normalize().multiplyScalar(maxSpeed);
     }
 
-    // Ralentir progressivement (friction de l'air)
-    this.velocity.multiplyScalar(0.98);
-
-    // Mettre à jour la position
+    // Mise à jour de la position
     this.position.add(this.velocity);
-
-    // Forcer l'altitude dans les limites
-    this.position.y = Math.max(GROUND_HEIGHT, Math.min(MAX_HEIGHT, this.position.y));
-
-    // Mettre à jour la position du mesh
     this.mesh.position.copy(this.position);
 
-    // Orienter l'oiseau dans la direction du mouvement mais garder l'axe Y stable
-    if (this.velocity.length() > 0.01) {
-      // Créer un vecteur direction qui pointe vers l'avant mais reste horizontal
-      const direction = new THREE.Vector3(this.velocity.x, 0, this.velocity.z).normalize();
-
-      // Créer un point devant l'oiseau pour qu'il regarde dans cette direction
-      const lookTarget = new THREE.Vector3().copy(this.position).add(direction);
-      this.mesh.lookAt(lookTarget);
-
-      // Légère inclinaison des ailes pour le virage
-      const bankAngle = this.velocity.x * 0.2;
-      this.mesh.rotation.z = -bankAngle;
+    // Orienter l'oiseau dans la direction du mouvement
+    if (this.velocity.length() > 0.001) {
+      this.mesh.lookAt(new THREE.Vector3().addVectors(this.position, this.velocity));
     }
 
-    // Empêcher de s'éloigner trop latéralement
-    if (Math.abs(this.position.x) > 30) {
-      // Diriger graduellement vers le centre
-      this.velocity.x -= this.position.x * 0.001;
-    }
+    // Animation de battement d'ailes
+    // À implémenter
   }
 }

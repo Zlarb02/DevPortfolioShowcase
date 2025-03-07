@@ -201,13 +201,11 @@ export default function Scene() {
           sectionZ = -100 - ((f-2) * 80);
         }
 
-        // Hauteur constante pour tous les oiseaux (vol parallèle au sol)
-        const flightHeight = 6 + Math.random() * 4; // Hauteur entre 6 et 10
-        
-        // Créer un leader avec position stable
+        // Créer un leader avec position plus visible
+        // Hauteur minimum réduite (2 au lieu de 5)
         const leaderPos = new THREE.Vector3(
-          (Math.random() - 0.5) * 20, // Moins d'étalement horizontal
-          flightHeight,                // Hauteur constante
+          (Math.random() - 0.5) * 30,
+          2 + Math.random() * 18, // Hauteur entre 2 et 20 au lieu de 5 et 20
           sectionZ
         );
         const leader = new Bird(scene, leaderPos);
@@ -223,10 +221,10 @@ export default function Scene() {
           const side = i % 2 === 0 ? 1 : -1;
           const row = Math.floor(i / 2) + 1;
 
-          // Formation plus resserrée avec altitude constante
+          // Formation plus resserrée pour moins de dispersion
           const followerPos = new THREE.Vector3(
             leaderPos.x + side * row * 1.2,
-            flightHeight - (Math.random() * 0.5), // Légère variation d'altitude
+            leaderPos.y - row * 0.4,
             leaderPos.z - row * 1.5
           );
 
@@ -259,49 +257,21 @@ export default function Scene() {
           );
         });
         
-        // Réduit l'épaisseur et les biseaux pour plus de finesse
         const geometry = new TextGeometry(text, {
           font: font,
-          size: 3, // Texte plus grand
-          height: 0.1, // Moins épais
-          curveSegments: 16, // Plus de détails
+          size: 1,
+          height: 0.2,
+          curveSegments: 12,
           bevelEnabled: true,
-          bevelThickness: 0.01, // Biseaux plus fins
-          bevelSize: 0.01,
+          bevelThickness: 0.03,
+          bevelSize: 0.02,
           bevelOffset: 0,
-          bevelSegments: 8,
+          bevelSegments: 5,
         });
-        
-        // Centrer le texte pour un meilleur positionnement
-        geometry.computeBoundingBox();
-        const textWidth = geometry.boundingBox?.max.x || 0;
-        geometry.translate(-textWidth / 2, 0, 0);
-        
-        // Matériau brillant avec une lumière émissive pour être plus visible
-        const material = new THREE.MeshStandardMaterial({ 
-          color: 0xffffff,
-          emissive: 0x333333, // Légère émission de lumière
-          metalness: 0.3,
-          roughness: 0.2
-        });
-        
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const mesh = new THREE.Mesh(geometry, material);
-        
-        // Positionner le texte au sol avec une légère inclinaison pour être lisible
         mesh.position.set(x, y, z);
-        mesh.rotation.x = -Math.PI / 8; // Légère inclinaison pour une meilleure lecture
-        
-        // Ajouter des ombres pour une meilleure intégration
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
         scene.add(mesh);
-        
-        // Ajouter un point lumineux au-dessus du texte pour l'éclairer
-        const textLight = new THREE.PointLight(0xffffff, 1, 20);
-        textLight.position.set(x, y + 5, z);
-        textLight.castShadow = true;
-        scene.add(textLight);
-        
       } catch (error) {
         console.error('Failed to add 3D text:', error);
         // Create a fallback for text if font loading fails
@@ -313,13 +283,13 @@ export default function Scene() {
       }
     };
 
-    // Add 3D text at various positions - positionner au niveau du sol
+    // Add 3D text at various positions
     const textPositions = [
-      { text: 'Bienvenue', x: 0, y: 0, z: -100 },
-      { text: 'Services', x: 0, y: 0, z: -200 },
-      { text: 'Projets', x: 0, y: 0, z: -300 },
-      { text: 'A propos', x: 0, y: 0, z: -400 },
-      { text: 'Contact', x: 0, y: 0, z: -500 },
+      { text: 'Bienvenue', x: 10, y: 5, z: -100 },
+      { text: 'Services', x: -10, y: 5, z: -200 },
+      { text: 'Projets', x: 10, y: 5, z: -300 },
+      { text: 'A propos', x: -10, y: 5, z: -400 },
+      { text: 'Contact', x: 10, y: 5, z: -500 },
     ];
     textPositions.forEach(pos => add3DText(pos.text, pos.x, pos.y, pos.z));
 
