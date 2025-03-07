@@ -59,13 +59,11 @@ export default function Scene() {
 
     // Add reflective floor
     const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
-    const floorMaterial = new THREE.MeshPhysicalMaterial({
+    // Use simpler material to avoid exceeding texture limits
+    const floorMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.1,
       metalness: 0.2,
-      reflectivity: 0.5,
-      clearcoat: 0.3,
-      clearcoatRoughness: 0.2
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
@@ -95,14 +93,11 @@ export default function Scene() {
           break;
       }
 
-      const material = new THREE.MeshPhysicalMaterial({
+      // Use simpler material to avoid exceeding texture limits
+      const material = new THREE.MeshStandardMaterial({
         color: 0x6366f1,
         roughness: 0.1,
         metalness: 0.9,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.1,
-        reflectivity: 1.0,
-        envMapIntensity: 1.5
       });
 
       const shape = new THREE.Mesh(geometry, material);
