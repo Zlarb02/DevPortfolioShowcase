@@ -242,29 +242,45 @@ export default function Scene() {
 
     // Function to add 3D text
     const add3DText = async (text: string, x: number, y: number, z: number) => {
-      const font = await new Promise<THREE.Font>(resolve => {
-        fontLoader.load(
-          '/helvetiker_regular.typeface.json',
-          resolve,
-          undefined,
-          (err) => console.error('An error happened:', err)
-        );
-      });
-      const geometry = new TextGeometry(text, {
-        font: font,
-        size: 1,
-        height: 0.2,
-        curveSegments: 12,
-        bevelEnabled: true,
-        bevelThickness: 0.03,
-        bevelSize: 0.02,
-        bevelOffset: 0,
-        bevelSegments: 5,
-      });
-      const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.position.set(x, y, z);
-      scene.add(mesh);
+      try {
+        // Use relative path instead of absolute path
+        const fontUrl = './assets/fonts/helvetiker_regular.typeface.json';
+        const font = await new Promise<THREE.Font>((resolve, reject) => {
+          fontLoader.load(
+            fontUrl,
+            resolve,
+            undefined,
+            (err) => {
+              console.error('Font loading error:', err);
+              reject(err);
+            }
+          );
+        });
+        
+        const geometry = new TextGeometry(text, {
+          font: font,
+          size: 1,
+          height: 0.2,
+          curveSegments: 12,
+          bevelEnabled: true,
+          bevelThickness: 0.03,
+          bevelSize: 0.02,
+          bevelOffset: 0,
+          bevelSegments: 5,
+        });
+        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+      } catch (error) {
+        console.error('Failed to add 3D text:', error);
+        // Create a fallback for text if font loading fails
+        const fallbackGeometry = new THREE.BoxGeometry(text.length * 0.5, 1, 0.1);
+        const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
+        fallbackMesh.position.set(x, y, z);
+        scene.add(fallbackMesh);
+      }
     };
 
     // Add 3D text at various positions
