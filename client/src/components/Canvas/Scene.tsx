@@ -11,7 +11,6 @@ export default function Scene() {
   const sceneRef = useRef<THREE.Scene>();
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
-  const lightsRef = useRef<THREE.Points>();
   const currentSection = useStore(state => state.currentSection);
 
   useEffect(() => {
@@ -19,8 +18,8 @@ export default function Scene() {
 
     // Scene setup
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xffffff, 0.05);
-    scene.background = new THREE.Color(0xffffff);
+    scene.fog = new THREE.FogExp2(0xffffff, 0.015); // Subtle fog for depth
+    scene.background = new THREE.Color(0xf0f0f0); // Slightly darker background
     sceneRef.current = scene;
 
     // Camera setup
@@ -30,7 +29,7 @@ export default function Scene() {
       0.1,
       1000
     );
-    camera.position.set(0, 0, 20);
+    camera.position.set(0, 2, 10); // Slightly elevated camera position
     cameraRef.current = camera;
 
     // Renderer setup
@@ -43,54 +42,45 @@ export default function Scene() {
     containerRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Create floating lights
-    const particleGeometry = new THREE.BufferGeometry();
-    const particleCount = 1000;
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-
-    for (let i = 0; i < particleCount; i++) {
-      // Position
-      positions[i * 3] = (Math.random() - 0.5) * 50;  // x
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 200 - 50;  // y, spread across sections
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 50;  // z
-
-      // Color - soft pastel colors
-      colors[i * 3] = 0.8 + Math.random() * 0.2;  // r
-      colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;  // g
-      colors[i * 3 + 2] = 0.8 + Math.random() * 0.2;  // b
-    }
-
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const particleMaterial = new THREE.PointsMaterial({
-      size: 0.2,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
+    // Add floor
+    const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.8,
+      metalness: 0.2,
     });
-
-    const points = new THREE.Points(particleGeometry, particleMaterial);
-    scene.add(points);
-    lightsRef.current = points;
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2;
+    scene.add(floor);
 
     // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
+
+    // Add fixed lights for corridor effect
+    const createSectionLights = (yPos: number) => {
+      const leftLight = new THREE.PointLight(0xffffff, 1, 20);
+      const rightLight = new THREE.PointLight(0xffffff, 1, 20);
+      leftLight.position.set(-5, 3, 0);
+      rightLight.position.set(5, 3, 0);
+
+      const group = new THREE.Group();
+      group.add(leftLight, rightLight);
+      group.position.y = yPos;
+
+      return group;
+    };
+
+    // Create lights for each section
+    const sectionCount = 5;
+    for (let i = 0; i < sectionCount; i++) {
+      const sectionLights = createSectionLights(-i * 50); // Match section spacing
+      scene.add(sectionLights);
+    }
 
     // Animation loop
     const animate = () => {
-      if (!lightsRef.current) return;
-
-      // Gentle floating animation for lights
-      lightsRef.current.rotation.y += 0.0005;
-      const positions = lightsRef.current.geometry.attributes.position.array as Float32Array;
-      for (let i = 0; i < positions.length; i += 3) {
-        positions[i + 1] += Math.sin(Date.now() * 0.001 + i) * 0.01;
-      }
-      lightsRef.current.geometry.attributes.position.needsUpdate = true;
-
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     };
@@ -117,7 +107,7 @@ export default function Scene() {
     if (!cameraRef.current) return;
 
     gsap.to(cameraRef.current.position, {
-      y: currentSection * -50,  // Increased spacing between sections
+      y: currentSection * -50 + 2, // Keep camera slightly elevated
       duration: 1.5,
       ease: "power2.inOut"
     });
