@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
@@ -6,11 +5,11 @@ import { useStore } from "@/lib/store";
 
 // Hardcoded colors for each section
 const COLORS = {
-  home: new THREE.Color(0xfff6e5),      // Warm white
-  services: new THREE.Color(0xe5f6ff),   // Cool white
-  projects: new THREE.Color(0xf5e6ff),   // Soft purple
-  about: new THREE.Color(0xe6fff5),      // Mint
-  contact: new THREE.Color(0xffe6e6)     // Soft pink
+  home: new THREE.Color(0xfff6e5), // Warm white
+  services: new THREE.Color(0xe5f6ff), // Cool white
+  projects: new THREE.Color(0xf5e6ff), // Soft purple
+  about: new THREE.Color(0xe6fff5), // Mint
+  contact: new THREE.Color(0xffe6e6), // Soft pink
 };
 
 export default function Scene() {
@@ -57,7 +56,7 @@ export default function Scene() {
     rendererRef.current = renderer;
 
     // Add reflective floor
-    const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
+    const floorGeometry = new THREE.PlaneGeometry(200, 1000, 200, 100);
     // Use simpler material to avoid exceeding texture limits
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: COLORS.home, // Start with first section color
@@ -65,7 +64,7 @@ export default function Scene() {
       metalness: 0.1,
     });
     floorMaterialRef.current = floorMaterial;
-    
+
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.z = -400; // Center the long floor
@@ -180,7 +179,8 @@ export default function Scene() {
 
   // Handle camera movement based on exact scroll position
   useEffect(() => {
-    if (!cameraRef.current || !sceneRef.current || !floorMaterialRef.current) return;
+    if (!cameraRef.current || !sceneRef.current || !floorMaterialRef.current)
+      return;
 
     // Calculate the target camera position based on exact scroll position
     const targetZ = 10 - exactScrollPosition * 100;
@@ -189,7 +189,7 @@ export default function Scene() {
     const currentSectionThreshold = Math.floor(exactScrollPosition);
     const nextSectionThreshold = currentSectionThreshold + 0.8;
     const acceleration = exactScrollPosition > nextSectionThreshold ? 2.5 : 1;
-    
+
     // Move camera with variable speed based on threshold
     gsap.to(cameraRef.current.position, {
       z: targetZ,
@@ -199,7 +199,7 @@ export default function Scene() {
 
     // Determine which section we're in (same as before)
     const currentSection = Math.floor(exactScrollPosition);
-    
+
     // Use hardcoded colors based on section index
     let targetColor;
     switch (currentSection) {
@@ -229,7 +229,7 @@ export default function Scene() {
       b: targetColor.b,
       duration: 1.5,
     });
-    
+
     // Also apply the color to the floor
     gsap.to(floorMaterialRef.current.color, {
       r: targetColor.r,
