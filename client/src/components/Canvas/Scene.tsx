@@ -24,18 +24,20 @@ class Bird {
     this.mesh = new THREE.Mesh(geometry, material);
     this.mesh.position.copy(position);
     this.position = position;
+    
+    // Vitesse initiale très faible pour un démarrage plus doux
     this.velocity = new THREE.Vector3(
-      (Math.random() - 0.5) * 0.02,
-      (Math.random() - 0.5) * 0.01,
-      (Math.random() - 0.5) * 0.02
+      (Math.random() - 0.5) * 0.008,
+      (Math.random() - 0.5) * 0.004,
+      (Math.random() - 0.5) * 0.008
     );
     
     this.leader = leader;
-    // Définir une position de décalage par rapport au leader
+    // Définir une position de décalage par rapport au leader (plus petite pour moins d'étalement)
     this.offset = new THREE.Vector3(
-      (Math.random() - 0.5) * 3,
-      (Math.random() - 0.5) * 1,
-      (Math.random() - 0.5) * 3
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 0.8,
+      (Math.random() - 0.5) * 2
     );
     
     scene.add(this.mesh);
@@ -43,48 +45,100 @@ class Bird {
   
   update() {
     if (this.leader) {
-      // Suivre le leader avec un léger décalage
+      // Suivre le leader avec un léger décalage et vitesse contrôlée
       const targetPosition = new THREE.Vector3().copy(this.leader.position).add(this.offset);
       const direction = new THREE.Vector3().subVectors(targetPosition, this.position);
-      direction.normalize().multiplyScalar(0.15); // Plus rapide
       
-      // Mélanger la direction cible avec un peu de mouvement aléatoire
-      this.velocity.add(direction);
-      this.velocity.multiplyScalar(0.9); // Moins d'amortissement
+      // Calcul de la distance au leader pour ajuster la vitesse
+      const distanceToLeader = direction.length();
+      
+      // Normalisation et ajustement de la force de direction en fonction de la distance
+      direction.normalize();
+      
+      // Si on est trop loin, accélérer pour rattraper, sinon rester à vitesse modérée
+      const accelerationFactor = distanceToLeader > 5 ? 0.03 : 0.01;
+      direction.multiplyScalar(accelerationFactor);
+      
+      // Limiter les mouvements brusques et ajouter une légère inertie
+      this.velocity.lerp(direction, 0.05);
+      
+      // Ajout d'un léger amortissement pour éviter l'accélération excessive
+      this.velocity.multiplyScalar(0.98);
     } else {
-      // Comportement de leader - vol plus libre et visible
-      if (Math.random() < 0.1) { // Plus de chance de changer de direction
+      // Comportement de leader - vol plus fluide et contrôlé
+      if (Math.random() < 0.02) { // Réduire les changements de direction
+        // Changements de direction plus subtils
         this.velocity.add(new THREE.Vector3(
-          (Math.random() - 0.5) * 0.1, // Mouvements plus importants
-          (Math.random() - 0.5) * 0.05,
-          (Math.random() - 0.5) * 0.1
+          (Math.random() - 0.5) * 0.02,
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.02
         ));
       }
       
-      // Déplacement par défaut pour le leader (toujours avancer un peu)
-      this.velocity.z -= 0.01; // Avancer à travers les sections
+      // Déplacement par défaut pour le leader (vitesse constante et modérée)
+      this.velocity.z -= 0.005; // Réduire la vitesse d'avancement
+      
+      // Limiter la vitesse maximale pour éviter les mouvements trop rapides
+      const maxSpeed = 0.1;
+      if (this.velocity.length() > maxSpeed) {
+        this.velocity.normalize().multiplyScalar(maxSpeed);
+      }
       
       // Rester dans les limites de la scène avec plus d'espace
       const boundsX = 50;
       const boundsY = 30;
-      const boundsZ = 500; // Zone beaucoup plus large en Z
-      if (Math.abs(this.position.x) > boundsX) this.velocity.x *= -0.8;
-      if (Math.abs(this.position.y) > boundsY) this.velocity.y *= -0.8;
+      const boundsZ = 500;
       
-      // Si trop loin, revenir en arrière
+      // Rebond plus doux aux limites
+      if (Math.abs(this.position.x) > boundsX) {
+        this.velocity.x *= -0.5;
+        // Forcer un retour vers le centre
+        this.velocity.x += (this.position.x > 0) ? -0.01 : 0.01;
+      }
+      
+      if (Math.abs(this.position.y) > boundsY) {
+        this.velocity.y *= -0.5;
+        // Forcer un retour vers le centre
+        this.velocity.y += (this.position.y > 0) ? -0.01 : 0.01;
+      }
+      
+      // Si trop loin, revenir en arrière avec une transition douce
       if (this.position.z < -boundsZ) {
-        this.position.z = -10; // Retour au début
+        // Réinitialiser progressivement la position Z
+        this.position.z = -10;
+        // Réinitialiser également la vitesse pour éviter les mouvements brusques
+        this.velocity.set(
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.005,
+          -0.002
+        );
       }
     }
     
-    // Appliquer la vélocité
+    // Appliquer la vélocité avec un léger lissage
     this.position.add(this.velocity);
     this.mesh.position.copy(this.position);
     
-    // Orienter l'oiseau dans la direction du mouvement
-    if (this.velocity.length() > 0.01) {
-      const lookAt = new THREE.Vector3().addVectors(this.position, this.velocity);
+    // Orienter l'oiseau dans la direction du mouvement avec lissage
+    if (this.velocity.length() > 0.001) {
+      // Créer un vecteur de direction à partir de la vélocité actuelle
+      const direction = this.velocity.clone().normalize();
+      
+      // Créer un point cible vers lequel l'oiseau doit regarder
+      const lookAt = new THREE.Vector3().addVectors(this.position, direction);
+      
+      // Sauvegarder la rotation actuelle
+      const currentRotation = this.mesh.quaternion.clone();
+      
+      // Calculer la rotation cible
       this.mesh.lookAt(lookAt);
+      const targetRotation = this.mesh.quaternion.clone();
+      
+      // Réappliquer la rotation actuelle
+      this.mesh.quaternion.copy(currentRotation);
+      
+      // Interpoler doucement vers la rotation cible (effet de lissage)
+      this.mesh.quaternion.slerp(targetRotation, 0.1);
     }
   }
 }
@@ -274,16 +328,17 @@ export default function Scene() {
         const leader = new Bird(scene, leaderPos);
         flock.push(leader);
         
-        // Créer les suiveurs en formation V
-        const flockSize = 5 + Math.floor(Math.random() * 5);
+        // Créer les suiveurs en formation V plus resserrée et cohérente
+        const flockSize = 4 + Math.floor(Math.random() * 3); // Réduire légèrement la taille du groupe
         for (let i = 0; i < flockSize; i++) {
           const side = i % 2 === 0 ? 1 : -1;
           const row = Math.floor(i / 2) + 1;
           
+          // Formation plus resserrée pour moins de dispersion
           const followerPos = new THREE.Vector3(
-            leaderPos.x + side * row * 1.5,
-            leaderPos.y - row * 0.5,
-            leaderPos.z - row * 2
+            leaderPos.x + side * row * 1.2,
+            leaderPos.y - row * 0.4,
+            leaderPos.z - row * 1.5
           );
           
           const bird = new Bird(scene, followerPos, leader);
