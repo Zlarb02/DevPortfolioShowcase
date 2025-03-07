@@ -13,39 +13,23 @@ export default function Home() {
   // Initialize with a small value to make progress bar visible
   const [scrollProgress, setScrollProgress] = useState(0.02);
   const setCurrentSection = useStore(state => state.setCurrentSection);
-  const currentSection = useStore(state => state.currentSection);
 
-  // Scroll handling effect
   useEffect(() => {
     const handleScroll = () => {
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight <= 0) return; // Prevent division by zero
-      
       // Add small offset to always show some progress
       const progress = (window.scrollY / scrollHeight) + 0.02;
       setScrollProgress(Math.min(progress, 1));
 
       // Update current section based on scroll position
       const sectionHeight = window.innerHeight;
-      const currentSection = Math.min(
-        Math.floor(window.scrollY / sectionHeight),
-        4 // Limit to max section index
-      );
+      const currentSection = Math.floor(window.scrollY / sectionHeight);
       setCurrentSection(currentSection);
     };
 
-    // Initial call to set current section on load
-    handleScroll();
-    console.log("Scroll handler initialized");
-    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [setCurrentSection]);
-
-  // Log when section changes for debugging
-  useEffect(() => {
-    console.log("Current section:", currentSection);
-  }, [currentSection]);
 
   const handleProgressBarClick = (targetProgress: number) => {
     const totalHeight = document.documentElement.scrollHeight - window.innerHeight;

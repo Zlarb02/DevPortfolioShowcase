@@ -1,218 +1,217 @@
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useEffect, useRef, useState } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { gsap } from "gsap";
-import Lights from "./Lights";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useStore } from "@/lib/store";
 
-// Define section colors
-export const SECTION_COLORS = [
-  new THREE.Color(0xff9e7a), // Home - Soft orange
-  new THREE.Color(0x4169e1), // Services - Royal blue
-  new THREE.Color(0xff1493), // Projects - Pink
-  new THREE.Color(0x20b2aa), // About - Light sea green
-  new THREE.Color(0xffd700), // Contact - Gold
+gsap.registerPlugin(ScrollTrigger);
+
+// Section-specific colors for ambient lighting
+const SECTION_COLORS = [
+  new THREE.Color(0xfff6e5), // Warm white for Home
+  new THREE.Color(0xe5f6ff), // Cool white for Services
+  new THREE.Color(0xf5e6ff), // Soft purple for Projects
+  new THREE.Color(0xe6fff5), // Mint for About
+  new THREE.Color(0xffe6e6), // Soft pink for Contact
 ];
 
-// The actual 3D scene content
-function SceneContent() {
-  const sceneRef = useRef<THREE.Scene>(null!);
-  const floorRef = useRef<THREE.Mesh>(null!);
-  const [lightsInstance, setLightsInstance] = useState<Lights | null>(null);
+export default function Scene() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene>();
+  const cameraRef = useRef<THREE.PerspectiveCamera>();
+  const rendererRef = useRef<THREE.WebGLRenderer>();
   const currentSection = useStore((state) => state.currentSection);
-  const { scene } = useThree();
 
-  // Initialize scene once
   useEffect(() => {
-    if (!sceneRef.current) {
-      sceneRef.current = scene;
+    if (!containerRef.current) return;
 
-      // Create light setup
-      const lights = new Lights(scene);
-      lights.setup();
-      setLightsInstance(lights);
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffffff, 0.008); // Reduced fog for better depth perception
+    scene.background = SECTION_COLORS[0];
+    sceneRef.current = scene;
 
-      // Create floor
-      const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
-      // Use simpler material to avoid exceeding texture limits
-      const floorMaterial = new THREE.MeshStandardMaterial({
-        color: SECTION_COLORS[0], // Start with first section color
-        roughness: 0.3,
-        metalness: 0.1,
-      });
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000,
+    );
+    camera.position.set(0, 2, 10); // Fixed height above ground
+    cameraRef.current = camera;
 
-      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.z = -400; // Center the long floor
-      floor.receiveShadow = true;
-      floor.name = "floor"; // Give the floor a name to easily find it later
-      scene.add(floor);
-      floorRef.current = floor;
+    // Renderer setup with optimized quality
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      precision: "mediump", // Lower precision to reduce GPU load
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Lower pixel ratio
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    // Use the updated property name for outputEncoding
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.BasicShadowMap; // Use simpler shadow map
+    containerRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-      // Add geometric shapes for each section with enhanced materials
-      // Home section - Sphere
-      const homeSphereGeometry = new THREE.SphereGeometry(5, 32, 32);
-      const homeSphereMaterial = new THREE.MeshStandardMaterial({
-        color: SECTION_COLORS[0],
-        metalness: 0.7,
-        roughness: 0.2,
-      });
-      const homeSphere = new THREE.Mesh(homeSphereGeometry, homeSphereMaterial);
-      homeSphere.position.set(0, 3, 0);
-      homeSphere.castShadow = true;
-      scene.add(homeSphere);
+    // Add reflective floor
+    const floorGeometry = new THREE.PlaneGeometry(100, 1000, 100, 100);
+    // Use simpler material to avoid exceeding texture limits
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: SECTION_COLORS[0], // Start with first section color
+      roughness: 0.3,
+      metalness: 0.1,
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.z = -400; // Center the long floor
+    floor.receiveShadow = true;
+    scene.add(floor);
 
-      // Services section - Torus
-      const servicesGeometry = new THREE.TorusGeometry(4, 1.5, 16, 100);
-      const servicesTorusMaterial = new THREE.MeshStandardMaterial({
-        color: SECTION_COLORS[1],
-        metalness: 0.5,
-        roughness: 0.3,
-      });
-      const servicesTorus = new THREE.Mesh(
-        servicesGeometry,
-        servicesTorusMaterial,
-      );
-      servicesTorus.position.set(0, 3, -100);
-      servicesTorus.castShadow = true;
-      scene.add(servicesTorus);
-
-      // Projects section - Multiple cubes in formation
-      const projectsCubesGroup = new THREE.Group();
-      for (let i = 0; i < 5; i++) {
-        const cubeSize = 2 + Math.random() * 2;
-        const cubeGeometry = new THREE.BoxGeometry(
-          cubeSize,
-          cubeSize,
-          cubeSize,
-        );
-        const cubeMaterial = new THREE.MeshStandardMaterial({
-          color: SECTION_COLORS[2],
-          metalness: 0.8,
-          roughness: 0.1,
-        });
-        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        const angle = (i / 5) * Math.PI * 2;
-        const radius = 6;
-        cube.position.set(
-          Math.cos(angle) * radius,
-          3 + Math.sin(i * 0.5) * 2,
-          -200 + Math.sin(angle) * radius,
-        );
-        cube.rotation.set(
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-        );
-        cube.castShadow = true;
-        projectsCubesGroup.add(cube);
+    // Add geometric shapes for each section with enhanced materials
+    const shapes = [];
+    for (let i = 0; i < 5; i++) {
+      let geometry;
+      switch (i) {
+        case 0: // Home
+          geometry = new THREE.TorusGeometry(3, 0.5, 32, 100);
+          break;
+        case 1: // Services
+          geometry = new THREE.OctahedronGeometry(3, 2);
+          break;
+        case 2: // Projects
+          geometry = new THREE.IcosahedronGeometry(3, 1);
+          break;
+        case 3: // About
+          geometry = new THREE.DodecahedronGeometry(3, 1);
+          break;
+        case 4: // Contact
+          geometry = new THREE.TorusKnotGeometry(2, 0.5, 128, 32);
+          break;
       }
-      scene.add(projectsCubesGroup);
 
-      // About section - Icosahedron
-      const aboutGeometry = new THREE.IcosahedronGeometry(5, 0);
-      const aboutMaterial = new THREE.MeshStandardMaterial({
-        color: SECTION_COLORS[3],
-        metalness: 0.4,
-        roughness: 0.6,
+      // Use simpler material to avoid exceeding texture limits
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x6366f1,
+        roughness: 0.1,
+        metalness: 0.9,
       });
-      const aboutShape = new THREE.Mesh(aboutGeometry, aboutMaterial);
-      aboutShape.position.set(0, 3, -300);
-      aboutShape.castShadow = true;
-      scene.add(aboutShape);
 
-      // Contact section - Torusknot
-      const contactGeometry = new THREE.TorusKnotGeometry(3.5, 1, 100, 16);
-      const contactMaterial = new THREE.MeshStandardMaterial({
-        color: SECTION_COLORS[4],
-        metalness: 0.6,
-        roughness: 0.3,
-      });
-      const contactShape = new THREE.Mesh(contactGeometry, contactMaterial);
-      contactShape.position.set(0, 3, -400);
-      contactShape.castShadow = true;
-      scene.add(contactShape);
+      const shape = new THREE.Mesh(geometry, material);
+      shape.position.set(0, 0, -i * 100 - 50);
+      shape.rotation.x = -Math.PI / 6;
+      shape.castShadow = true;
+      shape.receiveShadow = true;
+      shapes.push(shape);
+      scene.add(shape);
     }
-  }, [scene]);
 
-  // Update when section changes
+    // Enhanced lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    // Add fewer lights along the path with optimized shadow settings
+    // Use a single directional light for main lighting
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+    mainLight.position.set(0, 10, 0);
+    mainLight.castShadow = true;
+
+    // Optimize shadow map settings
+    mainLight.shadow.mapSize.width = 512; // Lower resolution
+    mainLight.shadow.mapSize.height = 512; // Lower resolution
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 50;
+    scene.add(mainLight);
+
+    // Add just a few spotlights for effect (only 3 instead of 20)
+    for (let i = 0; i < 3; i++) {
+      const spotLight = new THREE.SpotLight(
+        0xffffff,
+        0.7,
+        50,
+        Math.PI / 6,
+        0.5,
+        1,
+      );
+      spotLight.position.set(0, 8, -i * 150 - 50);
+      spotLight.castShadow = true;
+
+      // Optimize shadow map settings
+      spotLight.shadow.mapSize.width = 512;
+      spotLight.shadow.mapSize.height = 512;
+
+      scene.add(spotLight);
+    }
+
+    // Animation loop with enhanced shape animation
+    const animate = () => {
+      shapes.forEach((shape) => {
+        shape.rotation.y += 0.002;
+        shape.rotation.z += 0.001;
+      });
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    // Handle resize
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      renderer.dispose();
+      containerRef.current?.removeChild(renderer.domElement);
+    };
+  }, []);
+
+  // Handle section changes with smooth camera movement and enhanced color transition
   useEffect(() => {
-    if (!floorRef.current) return;
+    if (!cameraRef.current || !sceneRef.current) return;
 
-    // Change background color based on section
-    const color = SECTION_COLORS[currentSection].getStyle();
-    gsap.to("html", {
-      backgroundColor: color,
+    gsap.to(cameraRef.current.position, {
+      z: 10 - currentSection * 100, // Move forward while keeping initial height
       duration: 1.5,
+      ease: "power2.inOut",
     });
 
-    // Update floor color
-    if (
-      floorRef.current &&
-      floorRef.current.material instanceof THREE.MeshStandardMaterial
-    ) {
-      console.log(
-        "Updating floor color to section:",
-        currentSection,
-        SECTION_COLORS[currentSection],
-      );
-      gsap.to(floorRef.current.material.color, {
+    // Smooth background color transition
+    gsap.to(sceneRef.current.background as THREE.Color, {
+      r: SECTION_COLORS[currentSection].r,
+      g: SECTION_COLORS[currentSection].g,
+      b: SECTION_COLORS[currentSection].b,
+      duration: 1.5,
+    });
+    
+    // Update floor color to match current section
+    const floorMesh = sceneRef.current.children.find(
+      (child) => child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry
+    ) as THREE.Mesh;
+    
+    if (floorMesh && floorMesh.material instanceof THREE.MeshStandardMaterial) {
+      gsap.to(floorMesh.material.color, {
         r: SECTION_COLORS[currentSection].r,
         g: SECTION_COLORS[currentSection].g,
         b: SECTION_COLORS[currentSection].b,
         duration: 1.5,
       });
-    } else {
-      console.warn(
-        "Floor mesh not found or material is not MeshStandardMaterial",
-      );
     }
   }, [currentSection]);
 
-  // Animation for shapes
-  useFrame(({ clock }) => {
-    const elapsedTime = clock.getElapsedTime();
-
-    // Animate shapes based on which section is active
-    const shapes = sceneRef.current.children.filter(
-      (child) => child instanceof THREE.Mesh && child.name !== "floor",
-    );
-
-    shapes.forEach((shape, index) => {
-      if (shape instanceof THREE.Mesh) {
-        // Give each shape a slightly different animation
-        shape.rotation.x = Math.sin(elapsedTime * 0.3 + index) * 0.2;
-        shape.rotation.y = Math.sin(elapsedTime * 0.2 + index) * 0.3;
-
-        // Make the current section's shape more animated
-        const sectionIndex = Math.floor(index / 2);
-        if (sectionIndex === currentSection) {
-          shape.rotation.z += 0.01;
-          shape.position.y = 3 + Math.sin(elapsedTime) * 0.5;
-        }
-      }
-    });
-  });
-
-  return null;
-}
-
-// Wrapper component that provides the Canvas
-export default function Scene() {
   return (
-    <Canvas
-      shadows
-      camera={{ position: [0, 5, 10], fov: 75 }}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: -1,
-      }}
-    >
-      <SceneContent />
-    </Canvas>
+    <div
+      ref={containerRef}
+      className="fixed top-0 left-0 w-full h-full z-[-1]"
+    />
   );
 }
