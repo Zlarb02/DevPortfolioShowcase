@@ -3,6 +3,83 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 
+// Class pour créer un oiseau individuel
+class Bird {
+  mesh: THREE.Mesh;
+  velocity: THREE.Vector3;
+  position: THREE.Vector3;
+  leader: Bird | null;
+  offset: THREE.Vector3;
+  
+  constructor(scene: THREE.Scene, position: THREE.Vector3, leader: Bird | null = null) {
+    // Créer une forme simple pour représenter l'oiseau
+    const geometry = new THREE.ConeGeometry(0.2, 0.8, 3);
+    geometry.rotateX(Math.PI / 2);
+    const material = new THREE.MeshBasicMaterial({ 
+      color: 0xFFFFFF,
+      transparent: true,
+      opacity: 0.7
+    });
+    
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.position.copy(position);
+    this.position = position;
+    this.velocity = new THREE.Vector3(
+      (Math.random() - 0.5) * 0.02,
+      (Math.random() - 0.5) * 0.01,
+      (Math.random() - 0.5) * 0.02
+    );
+    
+    this.leader = leader;
+    // Définir une position de décalage par rapport au leader
+    this.offset = new THREE.Vector3(
+      (Math.random() - 0.5) * 3,
+      (Math.random() - 0.5) * 1,
+      (Math.random() - 0.5) * 3
+    );
+    
+    scene.add(this.mesh);
+  }
+  
+  update() {
+    if (this.leader) {
+      // Suivre le leader avec un léger décalage
+      const targetPosition = new THREE.Vector3().copy(this.leader.position).add(this.offset);
+      const direction = new THREE.Vector3().subVectors(targetPosition, this.position);
+      direction.normalize().multiplyScalar(0.05);
+      
+      // Mélanger la direction cible avec un peu de mouvement aléatoire
+      this.velocity.add(direction);
+      this.velocity.multiplyScalar(0.95); // Amortissement
+    } else {
+      // Comportement de leader - vol plus libre
+      if (Math.random() < 0.05) {
+        this.velocity.add(new THREE.Vector3(
+          (Math.random() - 0.5) * 0.02,
+          (Math.random() - 0.5) * 0.01,
+          (Math.random() - 0.5) * 0.02
+        ));
+      }
+      
+      // Rester dans les limites de la scène
+      const bounds = 30;
+      if (Math.abs(this.position.x) > bounds) this.velocity.x *= -0.5;
+      if (Math.abs(this.position.y) > bounds/2) this.velocity.y *= -0.5;
+      if (Math.abs(this.position.z) > bounds) this.velocity.z *= -0.5;
+    }
+    
+    // Appliquer la vélocité
+    this.position.add(this.velocity);
+    this.mesh.position.copy(this.position);
+    
+    // Orienter l'oiseau dans la direction du mouvement
+    if (this.velocity.length() > 0.01) {
+      const lookAt = new THREE.Vector3().addVectors(this.position, this.velocity);
+      this.mesh.lookAt(lookAt);
+    }
+  }
+}
+
 // Hardcoded colors for each section with more pronounced values
 const COLORS = {
   home: new THREE.Color("#f9e8d0"), // Plus prononcé que Warm white
@@ -172,11 +249,55 @@ export default function Scene() {
       scene.add(light);
     });
 
+    // Créer des groupes d'oiseaux en formation V
+    const createBirdFlocks = () => {
+      const flocks = [];
+      // Créer plusieurs formations
+      for (let f = 0; f < 3; f++) {
+        const flock = [];
+        
+        // Créer un leader
+        const leaderPos = new THREE.Vector3(
+          (Math.random() - 0.5) * 20,
+          10 + Math.random() * 10,
+          -30 - Math.random() * 20
+        );
+        const leader = new Bird(scene, leaderPos);
+        flock.push(leader);
+        
+        // Créer les suiveurs en formation V
+        const flockSize = 5 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < flockSize; i++) {
+          const side = i % 2 === 0 ? 1 : -1;
+          const row = Math.floor(i / 2) + 1;
+          
+          const followerPos = new THREE.Vector3(
+            leaderPos.x + side * row * 1.5,
+            leaderPos.y - row * 0.5,
+            leaderPos.z - row * 2
+          );
+          
+          const bird = new Bird(scene, followerPos, leader);
+          flock.push(bird);
+        }
+        
+        flocks.push(flock);
+      }
+      return flocks;
+    };
+    
+    const birdFlocks = createBirdFlocks();
+    
     // Animation loop with enhanced shape animation
     const animate = () => {
       shapes.forEach((shape) => {
         shape.rotation.y += 0.002;
         shape.rotation.z += 0.001;
+      });
+      
+      // Animer les oiseaux
+      birdFlocks.forEach(flock => {
+        flock.forEach(bird => bird.update());
       });
       
       // Ensure floor material is updated
@@ -200,6 +321,16 @@ export default function Scene() {
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
+      
+      // Nettoyer les oiseaux
+      birdFlocks.forEach(flock => {
+        flock.forEach(bird => {
+          scene.remove(bird.mesh);
+          bird.mesh.geometry.dispose();
+          (bird.mesh.material as THREE.Material).dispose();
+        });
+      });
+      
       renderer.dispose();
       containerRef.current?.removeChild(renderer.domElement);
     };
