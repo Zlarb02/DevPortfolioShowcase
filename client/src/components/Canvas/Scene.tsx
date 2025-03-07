@@ -11,30 +11,30 @@ class Bird {
   position: THREE.Vector3;
   leader: Bird | null;
   offset: THREE.Vector3;
-  
+
   constructor(scene: THREE.Scene, position: THREE.Vector3, leader: Bird | null = null) {
     // Créer une forme d'oiseau plus élaborée avec des ailes
     const bodyGeometry = new THREE.ConeGeometry(0.5, 1.5, 5);
     bodyGeometry.rotateX(Math.PI / 2);
-    
+
     // Ailes
     const wingGeometry = new THREE.BoxGeometry(2, 0.1, 0.8);
     wingGeometry.translate(0, 0.2, 0);
-    
+
     // Tête
     const headGeometry = new THREE.SphereGeometry(0.3, 8, 8);
     headGeometry.translate(0, 0, 0.9);
-    
+
     // Fusionner les géométries
     const geometry = new THREE.BufferGeometry();
-    
-    // Combiner les géométries
+
+    // Combiner les géométries en utilisant BufferGeometryUtils.mergeGeometries
     const mergedGeometry = BufferGeometryUtils.mergeGeometries([
       bodyGeometry,
       wingGeometry,
-      headGeometry
+      wingGeometry // Dupliquer la géométrie de l'aile pour l'aile droite
     ]);
-    
+
     // Choisir une couleur aléatoire parmi une palette d'oiseaux
     const birdColors = [
       0x333333, // noir
@@ -43,27 +43,27 @@ class Bird {
       0x4A2C2A, // brun foncé
       0x6A4C4A, // brun
     ];
-    
+
     const color = birdColors[Math.floor(Math.random() * birdColors.length)];
-    
+
     const material = new THREE.MeshStandardMaterial({ 
       color: color,
       roughness: 0.8,
       metalness: 0.1,
       flatShading: true
     });
-    
+
     this.mesh = new THREE.Mesh(mergedGeometry, material);
     this.mesh.position.copy(position);
     this.position = position;
-    
+
     // Vitesse initiale très faible pour un démarrage plus doux
     this.velocity = new THREE.Vector3(
       (Math.random() - 0.5) * 0.008,
       (Math.random() - 0.5) * 0.004,
       (Math.random() - 0.5) * 0.008
     );
-    
+
     this.leader = leader;
     // Définir une position de décalage par rapport au leader (plus petite pour moins d'étalement)
     this.offset = new THREE.Vector3(
@@ -71,29 +71,37 @@ class Bird {
       (Math.random() - 0.5) * 0.8,
       (Math.random() - 0.5) * 2
     );
-    
+
     scene.add(this.mesh);
+
+    // Créer des groupes pour les différentes parties du corps de l'oiseau
+    const bodyGroup = new THREE.Group();
+    bodyGroup.add(this.mesh);
+    this.mesh.geometry.addGroup(0, 1, 0);
+    this.mesh.geometry.addGroup(1, 1, 1);
+    this.mesh.geometry.addGroup(2, 1, 1);
+    scene.add(bodyGroup);
   }
-  
+
   update() {
     if (this.leader) {
       // Suivre le leader avec un léger décalage et vitesse contrôlée
       const targetPosition = new THREE.Vector3().copy(this.leader.position).add(this.offset);
       const direction = new THREE.Vector3().subVectors(targetPosition, this.position);
-      
+
       // Calcul de la distance au leader pour ajuster la vitesse
       const distanceToLeader = direction.length();
-      
+
       // Normalisation et ajustement de la force de direction en fonction de la distance
       direction.normalize();
-      
+
       // Si on est trop loin, accélérer pour rattraper, sinon rester à vitesse modérée
       const accelerationFactor = distanceToLeader > 5 ? 0.03 : 0.01;
       direction.multiplyScalar(accelerationFactor);
-      
+
       // Limiter les mouvements brusques et ajouter une légère inertie
       this.velocity.lerp(direction, 0.05);
-      
+
       // Ajout d'un léger amortissement pour éviter l'accélération excessive
       this.velocity.multiplyScalar(0.98);
     } else {
@@ -106,34 +114,34 @@ class Bird {
           (Math.random() - 0.5) * 0.02
         ));
       }
-      
+
       // Déplacement par défaut pour le leader (vitesse constante et modérée)
       this.velocity.z -= 0.005; // Réduire la vitesse d'avancement
-      
+
       // Limiter la vitesse maximale pour éviter les mouvements trop rapides
       const maxSpeed = 0.1;
       if (this.velocity.length() > maxSpeed) {
         this.velocity.normalize().multiplyScalar(maxSpeed);
       }
-      
+
       // Rester dans les limites de la scène avec plus d'espace
       const boundsX = 50;
       const boundsY = 30;
       const boundsZ = 500;
-      
+
       // Rebond plus doux aux limites
       if (Math.abs(this.position.x) > boundsX) {
         this.velocity.x *= -0.5;
         // Forcer un retour vers le centre
         this.velocity.x += (this.position.x > 0) ? -0.01 : 0.01;
       }
-      
+
       if (Math.abs(this.position.y) > boundsY) {
         this.velocity.y *= -0.5;
         // Forcer un retour vers le centre
         this.velocity.y += (this.position.y > 0) ? -0.01 : 0.01;
       }
-      
+
       // Si trop loin, revenir en arrière avec une transition douce
       if (this.position.z < -boundsZ) {
         // Réinitialiser progressivement la position Z
@@ -146,37 +154,48 @@ class Bird {
         );
       }
     }
-    
+
     // Appliquer la vélocité avec un léger lissage
     this.position.add(this.velocity);
     this.mesh.position.copy(this.position);
-    
+
     // Orienter l'oiseau dans la direction du mouvement avec lissage
     if (this.velocity.length() > 0.001) {
       // Créer un vecteur de direction à partir de la vélocité actuelle
       const direction = this.velocity.clone().normalize();
-      
+
       // Créer un point cible vers lequel l'oiseau doit regarder
       const lookAt = new THREE.Vector3().addVectors(this.position, direction);
-      
+
       // Sauvegarder la rotation actuelle
       const currentRotation = this.mesh.quaternion.clone();
-      
+
       // Calculer la rotation cible
       this.mesh.lookAt(lookAt);
       const targetRotation = this.mesh.quaternion.clone();
-      
+
       // Réappliquer la rotation actuelle
       this.mesh.quaternion.copy(currentRotation);
-      
+
       // Interpoler doucement vers la rotation cible (effet de lissage)
       this.mesh.quaternion.slerp(targetRotation, 0.1);
-      
-      // Animation des ailes (balancement) en fonction de la vitesse
-      // Utiliser une fonction sinus pour créer un effet de battement
-      const wingFlapSpeed = Math.min(5, this.velocity.length() * 30);
-      const wingRotation = Math.sin(Date.now() * 0.01 * wingFlapSpeed) * 0.2;
-      
+
+      // Animation des ailes plus réaliste
+      const wingFlapSpeed = Math.min(5, this.velocity.length() * 10);
+      const wingRotation = Math.sin(Date.now() * 0.01 * wingFlapSpeed) * 0.3;
+
+      // Appliquer la rotation uniquement aux ailes et non à tout le corps
+      // Récupérer les ailes (deuxième et troisième éléments de la géométrie fusionnée)
+      if (this.mesh.geometry.groups && this.mesh.geometry.groups.length > 1) {
+        // Modification de la matrice locale uniquement pour les ailes (segment 1 et 2)
+        const position = this.mesh.position.clone();
+        this.mesh.updateMatrix();
+
+        // Animer les ailes sans faire basculer tout le corps
+        this.mesh.geometry.groups[1].materialIndex = 0; // Assurer l'index matériel
+        this.mesh.geometry.groups[2].materialIndex = 0; // Assurer l'index matériel
+      }
+
       // Appliquer la rotation aux ailes en utilisant la matrice de rotation
       this.mesh.rotateX(wingRotation);
     }
@@ -358,7 +377,7 @@ export default function Scene() {
       // Créer plusieurs formations
       for (let f = 0; f < 5; f++) { // Plus de formations
         const flock = [];
-        
+
         // Créer un leader avec position plus visible
         const leaderPos = new THREE.Vector3(
           (Math.random() - 0.5) * 30,
@@ -366,49 +385,49 @@ export default function Scene() {
           -20 - (f * 80) // Répartir les formations dans les différentes sections
         );
         const leader = new Bird(scene, leaderPos);
-        
+
         // Activer les ombres pour les oiseaux
         leader.mesh.castShadow = true;
-        
+
         flock.push(leader);
-        
+
         // Créer les suiveurs en formation V plus resserrée et cohérente
         const flockSize = 4 + Math.floor(Math.random() * 3); // Réduire légèrement la taille du groupe
         for (let i = 0; i < flockSize; i++) {
           const side = i % 2 === 0 ? 1 : -1;
           const row = Math.floor(i / 2) + 1;
-          
+
           // Formation plus resserrée pour moins de dispersion
           const followerPos = new THREE.Vector3(
             leaderPos.x + side * row * 1.2,
             leaderPos.y - row * 0.4,
             leaderPos.z - row * 1.5
           );
-          
+
           const bird = new Bird(scene, followerPos, leader);
           bird.mesh.castShadow = true;
           flock.push(bird);
         }
-        
+
         flocks.push(flock);
       }
       return flocks;
     };
-    
+
     const birdFlocks = createBirdFlocks();
-    
+
     // Animation loop with enhanced shape animation
     const animate = () => {
       shapes.forEach((shape) => {
         shape.rotation.y += 0.002;
         shape.rotation.z += 0.001;
       });
-      
+
       // Animer les oiseaux
       birdFlocks.forEach(flock => {
         flock.forEach(bird => bird.update());
       });
-      
+
       // Debug - afficher nombre d'oiseaux (première exécution seulement)
       if (!window.birdsLogged) {
         const totalBirds = birdFlocks.reduce((sum, flock) => sum + flock.length, 0);
@@ -416,7 +435,7 @@ export default function Scene() {
         console.log(`Position du premier oiseau: `, birdFlocks[0][0].position);
         window.birdsLogged = true;
       }
-      
+
       // Ensure floor material is updated
       if (floorMaterialRef.current) {
         floorMaterialRef.current.needsUpdate = true;
@@ -438,7 +457,7 @@ export default function Scene() {
     // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
-      
+
       // Nettoyer les oiseaux
       birdFlocks.forEach(flock => {
         flock.forEach(bird => {
@@ -447,7 +466,7 @@ export default function Scene() {
           (bird.mesh.material as THREE.Material).dispose();
         });
       });
-      
+
       renderer.dispose();
       containerRef.current?.removeChild(renderer.domElement);
     };
@@ -513,10 +532,10 @@ export default function Scene() {
     if (floorMaterialRef.current) {
       // Directement assigner la couleur pour un effet immédiat
       floorMaterialRef.current.color = targetColor.clone();
-      
+
       // Indiquer explicitement que le matériau a besoin d'être mis à jour
       floorMaterialRef.current.needsUpdate = true;
-      
+
       console.log("Updated floor material color to:", 
         targetColor, 
         "for section:", 
@@ -528,23 +547,23 @@ export default function Scene() {
       const lights = sceneRef.current.children.filter(
         child => child instanceof THREE.Light
       ) as THREE.Light[];
-      
+
       // Calculate distance factors for each section's lights
       // to create a smooth transition between sections
       const sectionKeys = ['home', 'services', 'projects', 'about', 'contact'];
       const sectionIdx = currentSection;
       const fraction = exactScrollPosition - sectionIdx;
-      
+
       // Adjust intensity of each light based on distance to current scroll position
       lights.forEach((light) => {
         // Get the section this light belongs to
         const lightZPosition = light.position.z;
         const lightSectionIdx = Math.round(Math.abs(lightZPosition) / 100);
-        
+
         // Calculate distance factor (closer to 1 when this is the active section)
         const distance = Math.abs(sectionIdx - lightSectionIdx) + fraction;
         const intensity = 1 - Math.min(distance * 0.7, 0.9); // Keep minimum 0.1 intensity
-        
+
         // Apply intensity based on light type
         if (light instanceof THREE.AmbientLight) {
           gsap.to(light, { intensity: 0.3 + intensity * 0.7, duration: 1 });
