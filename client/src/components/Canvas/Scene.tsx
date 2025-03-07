@@ -57,11 +57,12 @@ export default function Scene() {
 
     // Add reflective floor
     const floorGeometry = new THREE.PlaneGeometry(200, 1000, 200, 100);
-    // Use simpler material to avoid exceeding texture limits
+    // Créer le matériau du sol avec une couleur plus visible
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: COLORS.home, // Start with first section color
-      roughness: 0.3,
-      metalness: 0.1,
+      roughness: 0.2,
+      metalness: 0.2,
+      side: THREE.DoubleSide, // Visible des deux côtés
     });
     floorMaterialRef.current = floorMaterial;
 
@@ -232,11 +233,19 @@ export default function Scene() {
 
     // Update floor material color to match the current section
     if (floorMaterialRef.current) {
+      // Forcer une mise à jour immédiate avant l'animation
+      floorMaterialRef.current.color.set(targetColor);
+      floorMaterialRef.current.needsUpdate = true;
+      
+      // Puis animer pour une transition douce
       gsap.to(floorMaterialRef.current.color, {
         r: targetColor.r,
         g: targetColor.g,
         b: targetColor.b,
         duration: 1.5,
+        onUpdate: () => {
+          floorMaterialRef.current!.needsUpdate = true;
+        }
       });
     }
   }, [exactScrollPosition]);
