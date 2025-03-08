@@ -4,8 +4,8 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 import { Bird } from "./Bird";
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 // Bird class is now imported from ./Bird
 
@@ -26,7 +26,6 @@ export default function Scene() {
   const floorMaterialRef = useRef<THREE.MeshStandardMaterial>();
   const currentSection = useStore((state) => state.currentSection);
   const fontLoader = new FontLoader();
-
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -123,25 +122,25 @@ export default function Scene() {
     const sectionLights = {
       home: [
         new THREE.AmbientLight(0xf9e8d0, 0.5),
-        new THREE.DirectionalLight(0xffa07a, 1)
+        new THREE.DirectionalLight(0xffa07a, 1),
       ],
       services: [
         new THREE.AmbientLight(0xd0e8f9, 0.3),
-        new THREE.SpotLight(0x4169e1, 1)
+        new THREE.SpotLight(0x4169e1, 1),
       ],
       projects: [
         new THREE.AmbientLight(0xe8d0f9, 0.4),
         new THREE.PointLight(0xff1493, 1),
-        new THREE.PointLight(0x4169e1, 1)
+        new THREE.PointLight(0x4169e1, 1),
       ],
       about: [
         new THREE.AmbientLight(0xd0f9e8, 0.7),
-        new THREE.DirectionalLight(0xffffff, 0.5)
+        new THREE.DirectionalLight(0xffffff, 0.5),
       ],
       contact: [
         new THREE.AmbientLight(0xf9d0d0, 0.4),
-        new THREE.SpotLight(0xffa07a, 1)
-      ]
+        new THREE.SpotLight(0xffa07a, 1),
+      ],
     };
 
     // Position the lights
@@ -170,15 +169,20 @@ export default function Scene() {
     sectionLights.contact[1].castShadow = true;
 
     // Optimize shadow map settings for all lights
-    Object.values(sectionLights).flat().forEach(light => {
-      if (light instanceof THREE.DirectionalLight || light instanceof THREE.SpotLight) {
-        light.shadow.mapSize.width = 512;
-        light.shadow.mapSize.height = 512;
-        light.shadow.camera.near = 0.5;
-        light.shadow.camera.far = 50;
-      }
-      scene.add(light);
-    });
+    Object.values(sectionLights)
+      .flat()
+      .forEach((light) => {
+        if (
+          light instanceof THREE.DirectionalLight ||
+          light instanceof THREE.SpotLight
+        ) {
+          light.shadow.mapSize.width = 512;
+          light.shadow.mapSize.height = 512;
+          light.shadow.camera.near = 0.5;
+          light.shadow.camera.far = 50;
+        }
+        scene.add(light);
+      });
 
     // Créer des oiseaux distribués dans la scène
     const createBirds = () => {
@@ -188,13 +192,13 @@ export default function Scene() {
 
       for (let i = 0; i < totalBirds; i++) {
         // Répartir les oiseaux sur différentes sections de la scène
-        const sectionZ = -20 - (Math.random() * 500); // Entre -20 et -520
+        const sectionZ = -20 - Math.random() * 500; // Entre -20 et -520
 
         // Position aléatoire mais visible
         const position = new THREE.Vector3(
-          (Math.random() - 0.5) * 40,  // Largeur: entre -20 et 20
-          5 + Math.random() * 15,     // Hauteur: entre 5 et 20
-          sectionZ
+          (Math.random() - 0.5) * 40, // Largeur: entre -20 et 20
+          5 + Math.random() * 15, // Hauteur: entre 5 et 20
+          sectionZ,
         );
 
         const bird = new Bird(scene, position);
@@ -210,29 +214,24 @@ export default function Scene() {
     const add3DText = async (text: string, x: number, y: number, z: number) => {
       try {
         // Use relative path instead of absolute path
-        const fontUrl = './assets/fonts/helvetiker_regular.typeface.json';
+        const fontUrl = "./assets/fonts/helvetiker_regular.typeface.json";
         const font = await new Promise<THREE.Font>((resolve, reject) => {
-          fontLoader.load(
-            fontUrl,
-            resolve,
-            undefined,
-            (err) => {
-              console.error('Font loading error:', err);
-              reject(err);
-            }
-          );
+          fontLoader.load(fontUrl, resolve, undefined, (err) => {
+            console.error("Font loading error:", err);
+            reject(err);
+          });
         });
 
         const geometry = new TextGeometry(text, {
           font: font,
           size: 1,
-          height: 0.1, // Reduced height for text
+          depth: 0.1,
           curveSegments: 12,
           bevelEnabled: true,
-          bevelThickness: 0.03,
-          bevelSize: 0.02,
+          bevelThickness: 10,
+          bevelSize: 8,
           bevelOffset: 0,
-          bevelSegments: 5,
+          bevelSegments: 5
         });
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const mesh = new THREE.Mesh(geometry, material);
@@ -241,10 +240,16 @@ export default function Scene() {
         mesh.receiveShadow = true;
         scene.add(mesh);
       } catch (error) {
-        console.error('Failed to add 3D text:', error);
+        console.error("Failed to add 3D text:", error);
         // Create a fallback for text if font loading fails
-        const fallbackGeometry = new THREE.BoxGeometry(text.length * 0.5, 1, 0.1);
-        const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const fallbackGeometry = new THREE.BoxGeometry(
+          text.length * 0.5,
+          1,
+          0.1,
+        );
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+        });
         const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
         fallbackMesh.position.set(x, 0.1, z); // Position at ground level
         scene.add(fallbackMesh);
@@ -253,14 +258,13 @@ export default function Scene() {
 
     // Add 3D text at various positions
     const textPositions = [
-      { text: 'Bienvenue', x: 10, y: 0, z: -100 },
-      { text: 'Services', x: -10, y: 0, z: -200 },
-      { text: 'Projets', x: 10, y: 0, z: -300 },
-      { text: 'A propos', x: -10, y: 0, z: -400 },
-      { text: 'Contact', x: 10, y: 0, z: -500 },
+      { text: "Bienvenue", x: 3, y: 0, z: -50 },
+      { text: "Services", x: -10, y: 0, z: -150 },
+      { text: "Projets", x: 3, y: 0, z: -250 },
+      { text: "A propos", x: -10, y: 0, z: -350 },
+      { text: "Contact", x: 3, y: 0, z: -450 },
     ];
-    textPositions.forEach(pos => add3DText(pos.text, pos.x, pos.y, pos.z));
-
+    textPositions.forEach((pos) => add3DText(pos.text, pos.x, pos.y, pos.z));
 
     // Animation loop with enhanced shape animation
     const animate = () => {
@@ -270,7 +274,7 @@ export default function Scene() {
       });
 
       // Animer les oiseaux
-      birds.forEach(bird => bird.update());
+      birds.forEach((bird) => bird.update());
 
       // Debug - afficher nombre d'oiseaux (première exécution seulement)
       if (!window.birdsLogged) {
@@ -302,7 +306,7 @@ export default function Scene() {
       window.removeEventListener("resize", handleResize);
 
       // Nettoyer les oiseaux
-      birds.forEach(bird => {
+      birds.forEach((bird) => {
         scene.remove(bird.mesh);
         bird.mesh.geometry.dispose();
         (bird.mesh.material as THREE.Material).dispose();
@@ -377,21 +381,23 @@ export default function Scene() {
       // Indiquer explicitement que le matériau a besoin d'être mis à jour
       floorMaterialRef.current.needsUpdate = true;
 
-      console.log("Updated floor material color to:", 
-        targetColor, 
-        "for section:", 
-        currentSection);
+      console.log(
+        "Updated floor material color to:",
+        targetColor,
+        "for section:",
+        currentSection,
+      );
     }
 
     // Adjusting light intensities based on current section
     if (sceneRef.current) {
       const lights = sceneRef.current.children.filter(
-        child => child instanceof THREE.Light
+        (child) => child instanceof THREE.Light,
       ) as THREE.Light[];
 
       // Calculate distance factors for each section's lights
       // to create a smooth transition between sections
-      const sectionKeys = ['home', 'services', 'projects', 'about', 'contact'];
+      const sectionKeys = ["home", "services", "projects", "about", "contact"];
       const sectionIdx = currentSection;
       const fraction = exactScrollPosition - sectionIdx;
 
@@ -408,9 +414,11 @@ export default function Scene() {
         // Apply intensity based on light type
         if (light instanceof THREE.AmbientLight) {
           gsap.to(light, { intensity: 0.3 + intensity * 0.7, duration: 1 });
-        } else if (light instanceof THREE.DirectionalLight || 
-                  light instanceof THREE.SpotLight || 
-                  light instanceof THREE.PointLight) {
+        } else if (
+          light instanceof THREE.DirectionalLight ||
+          light instanceof THREE.SpotLight ||
+          light instanceof THREE.PointLight
+        ) {
           gsap.to(light, { intensity: intensity * 1.2, duration: 1 });
         }
       });
