@@ -226,7 +226,7 @@ export default function Scene() {
         const geometry = new TextGeometry(text, {
           font: font,
           size: 1,
-          height: 0.2,
+          height: 0.1, // Reduced height for text
           curveSegments: 12,
           bevelEnabled: true,
           bevelThickness: 0.03,
@@ -236,7 +236,9 @@ export default function Scene() {
         });
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, y, z);
+        mesh.position.set(x, 0.1, z); // Position at ground level
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         scene.add(mesh);
       } catch (error) {
         console.error('Failed to add 3D text:', error);
@@ -244,18 +246,18 @@ export default function Scene() {
         const fallbackGeometry = new THREE.BoxGeometry(text.length * 0.5, 1, 0.1);
         const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-        fallbackMesh.position.set(x, y, z);
+        fallbackMesh.position.set(x, 0.1, z); // Position at ground level
         scene.add(fallbackMesh);
       }
     };
 
     // Add 3D text at various positions
     const textPositions = [
-      { text: 'Bienvenue', x: 10, y: 5, z: -100 },
-      { text: 'Services', x: -10, y: 5, z: -200 },
-      { text: 'Projets', x: 10, y: 5, z: -300 },
-      { text: 'A propos', x: -10, y: 5, z: -400 },
-      { text: 'Contact', x: 10, y: 5, z: -500 },
+      { text: 'Bienvenue', x: 10, y: 0, z: -100 },
+      { text: 'Services', x: -10, y: 0, z: -200 },
+      { text: 'Projets', x: 10, y: 0, z: -300 },
+      { text: 'A propos', x: -10, y: 0, z: -400 },
+      { text: 'Contact', x: 10, y: 0, z: -500 },
     ];
     textPositions.forEach(pos => add3DText(pos.text, pos.x, pos.y, pos.z));
 
