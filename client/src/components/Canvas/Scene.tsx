@@ -233,9 +233,31 @@ export default function Scene() {
           bevelOffset: 0,
           bevelSegments: 5,
         });
-        const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        // Créer une texture pour le texte
+        const textureLoader = new THREE.TextureLoader();
+        const woodTexture = textureLoader.load('./assets/textures/wood.jpg', () => {
+          console.log('Texture de bois chargée avec succès');
+        }, undefined, (err) => {
+          console.error('Erreur de chargement de texture:', err);
+        });
+        
+        // Configurer la texture
+        woodTexture.wrapS = THREE.RepeatWrapping;
+        woodTexture.wrapT = THREE.RepeatWrapping;
+        woodTexture.repeat.set(1, 1);
+        
+        // Créer un matériau texturé
+        const material = new THREE.MeshStandardMaterial({ 
+          map: woodTexture,
+          bumpMap: woodTexture,
+          bumpScale: 0.05,
+          color: 0xeeeeee, // Une teinte légère qui n'affecte pas trop la texture
+          metalness: 0.2,
+          roughness: 0.8
+        });
+        
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, 3, z); // Position at ground level
+        mesh.position.set(x, 0.1, z); // Position au sol
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
@@ -247,11 +269,23 @@ export default function Scene() {
           1,
           0.1,
         );
-        const fallbackMaterial = new THREE.MeshStandardMaterial({
-          color: 0xffffff,
+        
+        // Créer une texture simple pour le fallback
+        const textureLoader = new THREE.TextureLoader();
+        const simpleTexture = textureLoader.load('./assets/textures/concrete.jpg', undefined, undefined, (err) => {
+          console.error('Erreur de chargement de texture de secours:', err);
         });
+        
+        const fallbackMaterial = new THREE.MeshStandardMaterial({
+          map: simpleTexture,
+          color: 0xdddddd,
+          roughness: 0.7
+        });
+        
         const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-        fallbackMesh.position.set(x, 3, z); // Position at ground level
+        fallbackMesh.position.set(x, 0.1, z); // Position au sol
+        fallbackMesh.castShadow = true;
+        fallbackMesh.receiveShadow = true;
         scene.add(fallbackMesh);
       }
     };
