@@ -225,17 +225,17 @@ export default function Scene() {
         const geometry = new TextGeometry(text, {
           font: font,
           size: 1,
-          height: 0.2,  // Profondeur proportionnelle à la taille
+          depth: 0.2, // Profondeur proportionnelle à la taille
           curveSegments: 12,
           bevelEnabled: true,
-          bevelThickness: 0.05,  // Valeur proportionnelle à la taille
-          bevelSize: 0.03,       // Valeur proportionnelle à la taille
+          bevelThickness: 0.05, // Valeur proportionnelle à la taille
+          bevelSize: 0.03, // Valeur proportionnelle à la taille
           bevelOffset: 0,
-          bevelSegments: 5
+          bevelSegments: 5,
         });
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff });
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, 0.1, z); // Position at ground level
+        mesh.position.set(x, 3, z); // Position at ground level
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
@@ -251,18 +251,18 @@ export default function Scene() {
           color: 0xffffff,
         });
         const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-        fallbackMesh.position.set(x, 0.1, z); // Position at ground level
+        fallbackMesh.position.set(x, 3, z); // Position at ground level
         scene.add(fallbackMesh);
       }
     };
 
     // Add 3D text at various positions
     const textPositions = [
-      { text: "Bienvenue", x: 3, y: 0, z: -50 },
-      { text: "Services", x: -10, y: 0, z: -150 },
-      { text: "Projets", x: 3, y: 0, z: -250 },
-      { text: "A propos", x: -10, y: 0, z: -350 },
-      { text: "Contact", x: 3, y: 0, z: -450 },
+      { text: "Bienvenue", x: 3, z: -50 },
+      { text: "Services", x: -10, z: -150 },
+      { text: "Projets", x: 3, z: -250 },
+      { text: "A propos", x: -10, z: -350 },
+      { text: "Contact", x: 3, z: -450 },
     ];
     textPositions.forEach((pos) => add3DText(pos.text, pos.x, pos.y, pos.z));
 
