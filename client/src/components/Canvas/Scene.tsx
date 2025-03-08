@@ -225,11 +225,11 @@ export default function Scene() {
         const geometry = new TextGeometry(text, {
           font: font,
           size: 1,
-          depth: 0.1,
+          height: 0.2,  // Profondeur proportionnelle à la taille
           curveSegments: 12,
           bevelEnabled: true,
-          bevelThickness: 10,
-          bevelSize: 8,
+          bevelThickness: 0.05,  // Valeur proportionnelle à la taille
+          bevelSize: 0.03,       // Valeur proportionnelle à la taille
           bevelOffset: 0,
           bevelSegments: 5
         });
