@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 import { Bird } from "./Bird";
-import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { FontLoader, Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 // Bird class is now imported from ./Bird
@@ -41,9 +40,9 @@ export default function Scene() {
       60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000,
+      1000
     );
-    camera.position.set(0, 2, 10); // Fixed height above ground
+    camera.position.set(0, 3, 10); // Fixed height above ground
     cameraRef.current = camera;
 
     // Renderer setup with optimized quality
@@ -63,7 +62,7 @@ export default function Scene() {
     rendererRef.current = renderer;
 
     // Add reflective floor
-    const floorGeometry = new THREE.PlaneGeometry(200, 1000, 200, 100);
+    const floorGeometry = new THREE.PlaneGeometry(600, 1000, 600, 100);
     // Créer le matériau du sol avec une couleur plus visible
     const floorMaterial = new THREE.MeshStandardMaterial({
       color: COLORS.home, // Start with first section color
@@ -81,7 +80,15 @@ export default function Scene() {
     scene.add(floor);
 
     // Add geometric shapes for each section with enhanced materials
-    const shapes = [];
+    const shapes: THREE.Mesh<
+      | THREE.TorusGeometry
+      | THREE.OctahedronGeometry
+      | THREE.IcosahedronGeometry
+      | THREE.DodecahedronGeometry
+      | THREE.TorusKnotGeometry,
+      THREE.MeshStandardMaterial,
+      THREE.Object3DEventMap
+    >[] = [];
     for (let i = 0; i < 5; i++) {
       let geometry;
       switch (i) {
@@ -198,7 +205,7 @@ export default function Scene() {
         const position = new THREE.Vector3(
           (Math.random() - 0.5) * 40, // Largeur: entre -20 et 20
           5 + Math.random() * 15, // Hauteur: entre 5 et 20
-          sectionZ,
+          sectionZ
         );
 
         const bird = new Bird(scene, position);
@@ -211,11 +218,11 @@ export default function Scene() {
     const birds = createBirds();
 
     // Function to add 3D text
-    const add3DText = async (text: string, x: number, y: number, z: number) => {
+    const add3DText = async (text: string, y: number, z: number) => {
       try {
         // Use relative path instead of absolute path
         const fontUrl = "./assets/fonts/helvetiker_regular.typeface.json";
-        const font = await new Promise<THREE.Font>((resolve, reject) => {
+        const font = await new Promise<Font>((resolve, reject) => {
           fontLoader.load(fontUrl, resolve, undefined, (err) => {
             console.error("Font loading error:", err);
             reject(err);
@@ -224,8 +231,8 @@ export default function Scene() {
 
         const geometry = new TextGeometry(text, {
           font: font,
-          size: 1,
-          depth: 0.2, // Profondeur proportionnelle à la taille
+          size: 0.58,
+          depth: 0.1, // Profondeur proportionnelle à la taille
           curveSegments: 12,
           bevelEnabled: true,
           bevelThickness: 0.05, // Valeur proportionnelle à la taille
@@ -233,31 +240,46 @@ export default function Scene() {
           bevelOffset: 0,
           bevelSegments: 5,
         });
+
+        // Calculer la boîte englobante pour centrer le texte
+        geometry.computeBoundingBox();
+        const textWidth = geometry.boundingBox
+          ? geometry.boundingBox.max.x - geometry.boundingBox.min.x
+          : 0;
+
+        // Position x calculée pour centrer le texte
+        const x = -textWidth / 2 + 0.035;
+
         // Créer une texture pour le texte
         const textureLoader = new THREE.TextureLoader();
-        const woodTexture = textureLoader.load('./assets/textures/wood.jpg', () => {
-          console.log('Texture de bois chargée avec succès');
-        }, undefined, (err) => {
-          console.error('Erreur de chargement de texture:', err);
-        });
-        
+        const woodTexture = textureLoader.load(
+          "./assets/textures/wood.jpg",
+          () => {
+            console.log("Texture de bois chargée avec succès");
+          },
+          undefined,
+          (err) => {
+            console.error("Erreur de chargement de texture:", err);
+          }
+        );
+
         // Configurer la texture
         woodTexture.wrapS = THREE.RepeatWrapping;
         woodTexture.wrapT = THREE.RepeatWrapping;
         woodTexture.repeat.set(1, 1);
-        
+
         // Créer un matériau texturé
-        const material = new THREE.MeshStandardMaterial({ 
+        const material = new THREE.MeshStandardMaterial({
           map: woodTexture,
           bumpMap: woodTexture,
           bumpScale: 0.05,
           color: 0xeeeeee, // Une teinte légère qui n'affecte pas trop la texture
           metalness: 0.2,
-          roughness: 0.8
+          roughness: 0.8,
         });
-        
+
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(x, 0.1, z); // Position au sol
+        mesh.position.set(x, y, z); // Position centrée sur l'axe X
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         scene.add(mesh);
@@ -267,23 +289,29 @@ export default function Scene() {
         const fallbackGeometry = new THREE.BoxGeometry(
           text.length * 0.5,
           1,
-          0.1,
+          0.1
         );
-        
+
         // Créer une texture simple pour le fallback
         const textureLoader = new THREE.TextureLoader();
-        const simpleTexture = textureLoader.load('./assets/textures/concrete.jpg', undefined, undefined, (err) => {
-          console.error('Erreur de chargement de texture de secours:', err);
-        });
-        
+        const simpleTexture = textureLoader.load(
+          "./assets/textures/concrete.jpg",
+          undefined,
+          undefined,
+          (err) => {
+            console.error("Erreur de chargement de texture de secours:", err);
+          }
+        );
+
         const fallbackMaterial = new THREE.MeshStandardMaterial({
           map: simpleTexture,
           color: 0xdddddd,
-          roughness: 0.7
+          roughness: 0.7,
         });
-        
+
         const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-        fallbackMesh.position.set(x, 0.1, z); // Position au sol
+        // Centrer le fallback sur l'axe X
+        fallbackMesh.position.set(-((text.length * 0.5) / 2), y, z);
         fallbackMesh.castShadow = true;
         fallbackMesh.receiveShadow = true;
         scene.add(fallbackMesh);
@@ -292,13 +320,13 @@ export default function Scene() {
 
     // Add 3D text at various positions
     const textPositions = [
-      { text: "Bienvenue", x: 3, z: -50 },
-      { text: "Services", x: -10, z: -150 },
-      { text: "Projets", x: 3, z: -250 },
-      { text: "A propos", x: -10, z: -350 },
-      { text: "Contact", x: 3, z: -450 },
+      { text: "Bienvenue", z: -50 },
+      { text: "Services", z: -150 },
+      { text: "Projets", z: -250 },
+      { text: `A Propos`, z: -350 },
+      { text: "Contact", z: -450 },
     ];
-    textPositions.forEach((pos) => add3DText(pos.text, pos.x, pos.y, pos.z));
+    textPositions.forEach((pos) => add3DText(pos.text, 6.11, pos.z));
 
     // Animation loop with enhanced shape animation
     const animate = () => {
@@ -354,28 +382,48 @@ export default function Scene() {
   // Get the exact scroll position for smoother camera movement
   const exactScrollPosition = useStore((state) => state.exactScrollPosition);
 
-  // Handle camera movement based on exact scroll position
+  // Définir les positions exactes pour chaque section avec un décalage cohérent
+  const SECTION_POSITIONS = {
+    home: -40, // Position verrouillée pour home
+    services: -140, // Position verrouillée pour services
+    projects: -240, // Position verrouillée pour projects
+    about: -340, // Position verrouillée pour about
+    contact: -440, // Inchangé puisque ça fonctionne bien
+  };
+
+  // Dans le useEffect de la gestion de la caméra
   useEffect(() => {
     if (!cameraRef.current || !sceneRef.current || !floorMaterialRef.current)
       return;
 
-    // Calculate the target camera position based on exact scroll position
-    const targetZ = 10 - exactScrollPosition * 100;
+    // Limiter exactScrollPosition à la plage valide (0 à 4.99)
+    const clampedScrollPosition = Math.min(
+      4.99,
+      Math.max(0, exactScrollPosition)
+    );
 
-    // Calculate the threshold values for accelerating camera movement
-    const currentSectionThreshold = Math.floor(exactScrollPosition);
-    const nextSectionThreshold = currentSectionThreshold + 0.8;
-    const acceleration = exactScrollPosition > nextSectionThreshold ? 2.5 : 1;
+    // Identifier la section actuelle (sans fraction)
+    const currentIndex = Math.floor(clampedScrollPosition);
+    const sectionKeys = ["home", "services", "projects", "about", "contact"];
+    const currentSectionKey = sectionKeys[
+      currentIndex
+    ] as keyof typeof SECTION_POSITIONS;
 
-    // Move camera with variable speed based on threshold
+    // Verrouiller la caméra sur la position de la section actuelle (pas d'interpolation)
+    const targetZ = SECTION_POSITIONS[currentSectionKey];
+
+    // Move camera with variable speed based on section transition
     gsap.to(cameraRef.current.position, {
       z: targetZ,
-      duration: acceleration === 1 ? 0.8 : 0.5, // Faster when accelerating
-      ease: acceleration === 1 ? "power1.out" : "power2.inOut",
+      duration: 0.8,
+      ease: "power2.out",
     });
 
-    // Determine which section we're in (same as before)
-    const currentSection = Math.floor(exactScrollPosition);
+    // Determine which section we're in with proper clamping
+    const currentSection = Math.min(
+      4,
+      Math.max(0, Math.floor(clampedScrollPosition))
+    );
 
     // Use hardcoded colors based on section index
     let targetColor;
@@ -419,21 +467,21 @@ export default function Scene() {
         "Updated floor material color to:",
         targetColor,
         "for section:",
-        currentSection,
+        currentSection
       );
     }
 
     // Adjusting light intensities based on current section
     if (sceneRef.current) {
       const lights = sceneRef.current.children.filter(
-        (child) => child instanceof THREE.Light,
+        (child) => child instanceof THREE.Light
       ) as THREE.Light[];
 
       // Calculate distance factors for each section's lights
       // to create a smooth transition between sections
       const sectionKeys = ["home", "services", "projects", "about", "contact"];
       const sectionIdx = currentSection;
-      const fraction = exactScrollPosition - sectionIdx;
+      const fraction = clampedScrollPosition - sectionIdx;
 
       // Adjust intensity of each light based on distance to current scroll position
       lights.forEach((light) => {

@@ -2,7 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
+    <!-- Ajouter dans votre head -->
+    <link rel="stylesheet" href="css/smooth-progress.css" />
+
+    <!-- Ajouter avant la fermeture body -->
+    <script src="js/smooth-progress.js"></script>
+    <script>
+      // Initialiser la barre de progression
+      const progressBar = new SmoothProgressBar(".your-progress-bar-selector");
+
+      // Utiliser pour mettre à jour la progression de façon fluide
+      // Par exemple, lors d'un événement de défilement:
+      window.addEventListener("scroll", () => {
+        const scrollPercentage =
+          (window.scrollY /
+            (document.documentElement.scrollHeight - window.innerHeight)) *
+          100;
+        progressBar.updateProgress(scrollPercentage);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

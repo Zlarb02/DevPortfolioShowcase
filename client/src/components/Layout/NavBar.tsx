@@ -5,7 +5,7 @@ interface NavBarProps {
   onNavigate: (targetProgress: number) => void;
 }
 
-const SECTIONS = ["HOME", "SERVICES", "PROJECTS", "ABOUT", "CONTACT"];
+const SECTIONS = ["ACCUEIL", "SERVICES", "PROJETS", "À PROPOS", "CONTACT"];
 
 export default function NavBar({ progress, onNavigate }: NavBarProps) {
   const [activeSection, setActiveSection] = useState(0);
@@ -16,7 +16,9 @@ export default function NavBar({ progress, onNavigate }: NavBarProps) {
   }, [progress]);
 
   const handleSectionClick = (index: number) => {
-    onNavigate(index / (SECTIONS.length - 1));
+    // Inverser la logique pour correspondre à l'inversion du défilement
+    // Au lieu d'aller de 0 à 1, on va de 1 à 0
+    onNavigate(1 - index / (SECTIONS.length - 1));
   };
 
   return (
