@@ -53,11 +53,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1"
     />
-    <!-- Ajouter dans votre head -->
-    <link rel="stylesheet" href="./css/smooth-progress.css" />
+    <!-- Mise à jour des chemins avec le préfixe base -->
+    <link rel="stylesheet" href="%BASE_URL%css/smooth-progress.css" />
 
-    <!-- Ajouter avant la fermeture body -->
-    <script src="./js/smooth-progress.js"></script>
+    <!-- Script avec chemins mis à jour -->
+    <script src="%BASE_URL%js/smooth-progress.js"></script>
     <script>
       // Initialiser la barre de progression
       const progressBar = new SmoothProgressBar(".smooth-progress-bar", {
@@ -75,8 +75,7 @@
         progressBar.updateProgress(scrollPercentage);
       });
     </script>
-    <script type="module" crossorigin src="./assets/index-fZSyPhBY.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B77TyCTD.css" />
+    <!-- Suppression des chemins spécifiques qui seront gérés automatiquement par Vite -->
   </head>
   <body>
     <!-- Ajout de la barre de progression -->
