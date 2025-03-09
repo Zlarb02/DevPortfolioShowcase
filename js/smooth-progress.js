@@ -1,101 +1,73 @@
-/**
- * SmoothProgressBar - Une classe pour rendre fluide les barres de progression
- */
 class SmoothProgressBar {
   constructor(selector, options = {}) {
-    this.progressElement = document.querySelector(selector);
-    if (!this.progressElement) {
-      console.error(`Element not found: ${selector}`);
-      return;
+    this.selector = selector;
+    this.element = document.querySelector(selector);
+
+    // Créer l'élément si non existant
+    if (!this.element) {
+      this.element = document.createElement("div");
+      this.element.className = "smooth-progress-bar";
+      if (options.gradient) this.element.classList.add("gradient");
+      document.body.appendChild(this.element);
     }
 
-    // Options par défaut
+    this.progress = 0;
+    this.targetProgress = 0;
+    this.animationFrame = null;
     this.options = {
-      transitionDuration: options.transitionDuration || 300,
-      updateFrequency: options.updateFrequency || 60,
-      easing: options.easing || "ease-out",
+      smoothness: options.smoothness || 0.1,
+      autoHide: options.autoHide !== undefined ? options.autoHide : true,
     };
 
-    // État interne
-    this.currentValue = 0;
-    this.targetValue = 0;
-    this.animationFrameId = null;
-
-    // Appliquer les styles initiaux
-    this.setupStyles();
+    this.update = this.update.bind(this);
   }
 
-  /**
-   * Configure les styles nécessaires pour une animation fluide
-   */
-  setupStyles() {
-    if (!this.progressElement) return;
+  update() {
+    // Calculer le nouveau progrès avec effet de lissage
+    this.progress +=
+      (this.targetProgress - this.progress) * this.options.smoothness;
 
-    this.progressElement.style.transition = `width ${this.options.transitionDuration}ms ${this.options.easing}`;
-  }
+    // Appliquer le progrès à l'élément
+    this.element.style.width = `${this.progress}%`;
 
-  /**
-   * Met à jour la valeur cible et démarre l'animation si nécessaire
-   * @param {number} value - Valeur entre 0 et 100
-   */
-  updateProgress(value) {
-    if (!this.progressElement) return;
+    // Auto-masquer si à 100%
+    if (this.options.autoHide && this.progress >= 99.9) {
+      setTimeout(() => {
+        this.element.style.opacity = "0";
 
-    // Limiter la valeur entre 0 et 100
-    this.targetValue = Math.max(0, Math.min(100, value));
+        setTimeout(() => {
+          this.reset();
+        }, 300);
+      }, 500);
+    } else {
+      this.element.style.opacity = "1";
+    }
 
-    // Démarrer l'animation si elle n'est pas déjà en cours
-    if (this.animationFrameId === null) {
-      this.animateProgress();
+    // Continuer l'animation si nécessaire
+    if (Math.abs(this.progress - this.targetProgress) > 0.1) {
+      this.animationFrame = requestAnimationFrame(this.update);
     }
   }
 
-  /**
-   * Anime la barre de progression vers la valeur cible
-   */
-  animateProgress() {
-    if (!this.progressElement) {
-      this.animationFrameId = null;
-      return;
+  updateProgress(percent) {
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+
+    this.targetProgress = percent;
+
+    if (!this.animationFrame) {
+      this.animationFrame = requestAnimationFrame(this.update);
     }
-
-    // Calculer la nouvelle valeur actuelle (approche fluide)
-    const diff = this.targetValue - this.currentValue;
-
-    // Si nous sommes très proches de la cible, on y va directement
-    if (Math.abs(diff) < 0.1) {
-      this.currentValue = this.targetValue;
-      this.progressElement.style.width = `${this.currentValue}%`;
-      this.animationFrameId = null;
-      return;
-    }
-
-    // Sinon, on fait un mouvement fluide vers la cible
-    this.currentValue += diff * 0.1;
-    this.progressElement.style.width = `${this.currentValue}%`;
-
-    // Continuer l'animation
-    this.animationFrameId = requestAnimationFrame(() => this.animateProgress());
   }
 
-  /**
-   * Définit immédiatement la valeur sans animation
-   * @param {number} value - Valeur entre 0 et 100
-   */
-  setProgressInstantly(value) {
-    if (!this.progressElement) return;
-
-    // Annuler toute animation en cours
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
+  reset() {
+    this.progress = 0;
+    this.targetProgress = 0;
+    this.element.style.width = "0";
+    this.element.style.opacity = "1";
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
     }
-
-    // Définir directement la valeur
-    this.currentValue = this.targetValue = Math.max(0, Math.min(100, value));
-    this.progressElement.style.width = `${this.currentValue}%`;
   }
 }
-
-// Export pour une utilisation dans d'autres fichiers
-window.SmoothProgressBar = SmoothProgressBar;

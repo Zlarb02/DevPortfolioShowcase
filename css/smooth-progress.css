@@ -1,43 +1,19 @@
-.smooth-progress-container {
-  width: 100%;
-  height: 3px;
-  background-color: rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
 .smooth-progress-bar {
-  height: 100%;
-  width: 0;
-  background-color: #4a8df8;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  transition: width 300ms ease-out;
+  height: 4px;
+  width: 0;
+  background-color: hsl(var(--primary));
+  z-index: 1000;
+  transition: width 0.3s ease-out;
 }
 
-/* Ajout d'un effet de brillance pour un rendu plus dynamique */
-.smooth-progress-bar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+/* Variante avec gradient pour un effet plus dynamique */
+.smooth-progress-bar.gradient {
   background: linear-gradient(
     to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
+    hsl(var(--primary)),
+    hsl(var(--accent))
   );
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
 }
