@@ -3,10 +3,9 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { useStore } from "@/lib/store";
 import { Bird } from "./Bird";
-import { FontLoader, Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-
-// Bird class is now imported from ./Bird
+import { Avatar } from "./Avatar";
+import { assetCache } from "@/utils/assetLoader";
 
 // Hardcoded colors for each section with more pronounced values
 const COLORS = {
@@ -23,8 +22,8 @@ export default function Scene() {
   const cameraRef = useRef<THREE.PerspectiveCamera>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
   const floorMaterialRef = useRef<THREE.MeshStandardMaterial>();
+  const avatarRef = useRef<Avatar>();
   const currentSection = useStore((state) => state.currentSection);
-  const fontLoader = new FontLoader();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -217,17 +216,22 @@ export default function Scene() {
 
     const birds = createBirds();
 
+    // Initialiser l'avatar
+    const initializeAvatar = async () => {
+      const avatar = new Avatar(scene, new THREE.Vector3(0, 1.5, -50));
+      await avatar.initialize();
+      avatarRef.current = avatar;
+    };
+
+    initializeAvatar();
+
     // Function to add 3D text
     const add3DText = async (text: string, y: number, z: number) => {
       try {
-        // Use relative path instead of absolute path
-        const fontUrl = "./assets/fonts/helvetiker_regular.typeface.json";
-        const font = await new Promise<Font>((resolve, reject) => {
-          fontLoader.load(fontUrl, resolve, undefined, (err) => {
-            console.error("Font loading error:", err);
-            reject(err);
-          });
-        });
+        // Utiliser notre nouveau service pour charger la police
+        const font = await assetCache.loadFont(
+          "/assets/fonts/helvetiker_regular.typeface.json"
+        );
 
         const geometry = new TextGeometry(text, {
           font: font,
@@ -250,33 +254,15 @@ export default function Scene() {
         // Position x calculée pour centrer le texte
         const x = -textWidth / 2 + 0.035;
 
-        // Créer une texture pour le texte
-        const textureLoader = new THREE.TextureLoader();
-        const woodTexture = textureLoader.load(
-          "./assets/textures/wood.jpg",
-          () => {
-            console.log("Texture de bois chargée avec succès");
-          },
-          undefined,
-          (err) => {
-            console.error("Erreur de chargement de texture:", err);
+        // Utiliser notre service pour charger la texture et créer le matériau
+        const material = await assetCache.createMaterial(
+          "/assets/textures/wood.jpg",
+          {
+            color: 0xeeeeee,
+            roughness: 0.8,
+            metalness: 0.2,
           }
         );
-
-        // Configurer la texture
-        woodTexture.wrapS = THREE.RepeatWrapping;
-        woodTexture.wrapT = THREE.RepeatWrapping;
-        woodTexture.repeat.set(1, 1);
-
-        // Créer un matériau texturé
-        const material = new THREE.MeshStandardMaterial({
-          map: woodTexture,
-          bumpMap: woodTexture,
-          bumpScale: 0.05,
-          color: 0xeeeeee, // Une teinte légère qui n'affecte pas trop la texture
-          metalness: 0.2,
-          roughness: 0.8,
-        });
 
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x, y, z); // Position centrée sur l'axe X
@@ -292,29 +278,23 @@ export default function Scene() {
           0.1
         );
 
-        // Créer une texture simple pour le fallback
-        const textureLoader = new THREE.TextureLoader();
-        const simpleTexture = textureLoader.load(
-          "./assets/textures/concrete.jpg",
-          undefined,
-          undefined,
-          (err) => {
-            console.error("Erreur de chargement de texture de secours:", err);
-          }
-        );
-
-        const fallbackMaterial = new THREE.MeshStandardMaterial({
-          map: simpleTexture,
-          color: 0xdddddd,
-          roughness: 0.7,
-        });
-
-        const fallbackMesh = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
-        // Centrer le fallback sur l'axe X
-        fallbackMesh.position.set(-((text.length * 0.5) / 2), y, z);
-        fallbackMesh.castShadow = true;
-        fallbackMesh.receiveShadow = true;
-        scene.add(fallbackMesh);
+        // Utiliser notre service pour le matériau de secours
+        assetCache
+          .createMaterial("/assets/textures/concrete.jpg", {
+            color: 0xdddddd,
+            roughness: 0.7,
+          })
+          .then((fallbackMaterial) => {
+            const fallbackMesh = new THREE.Mesh(
+              fallbackGeometry,
+              fallbackMaterial
+            );
+            // Centrer le fallback sur l'axe X
+            fallbackMesh.position.set(-((text.length * 0.5) / 2), y, z);
+            fallbackMesh.castShadow = true;
+            fallbackMesh.receiveShadow = true;
+            scene.add(fallbackMesh);
+          });
       }
     };
 
@@ -343,6 +323,11 @@ export default function Scene() {
         console.log(`Nombre total d'oiseaux créés: ${birds.length}`);
         console.log(`Position du premier oiseau: `, birds[0].position);
         window.birdsLogged = true;
+      }
+
+      // Mettre à jour l'avatar
+      if (avatarRef.current) {
+        avatarRef.current.update();
       }
 
       // Ensure floor material is updated
@@ -409,8 +394,18 @@ export default function Scene() {
       currentIndex
     ] as keyof typeof SECTION_POSITIONS;
 
-    // Verrouiller la caméra sur la position de la section actuelle (pas d'interpolation)
-    const targetZ = SECTION_POSITIONS[currentSectionKey];
+    // Calculer la fraction pour le mouvement subtil
+    const fraction = clampedScrollPosition - currentIndex;
+
+    // Obtenir la position de base de la section actuelle
+    const baseZ = SECTION_POSITIONS[currentSectionKey];
+
+    // Calculer un léger décalage basé sur la fraction (±2 unités maximum)
+    // Inverser le signe pour que descendre fasse avancer et remonter fasse reculer
+    const microMovement = (0.5 - fraction) * 4; // Maintenant: +2 à -2 unités (inversé)
+
+    // Position finale avec le micro-mouvement
+    const targetZ = baseZ + microMovement;
 
     // Move camera with variable speed based on section transition
     gsap.to(cameraRef.current.position, {
@@ -469,6 +464,11 @@ export default function Scene() {
         "for section:",
         currentSection
       );
+    }
+
+    // Mettre à jour l'avatar selon la section
+    if (avatarRef.current) {
+      avatarRef.current.changeSection(currentSectionKey);
     }
 
     // Adjusting light intensities based on current section
